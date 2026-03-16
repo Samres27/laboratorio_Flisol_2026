@@ -1,0 +1,286 @@
+<div class="page-header">
+      <h1> <%= title %></h1>
+    </div>
+
+    <!-- Grid de retos -->
+    <div class="retos-grid">
+
+      <% challenges.forEach(challenge => { %>
+      <div class="card <%= challenge.inhabited ? 'resolver' : '' %>" id="card-<%= challenge.id %>">
+
+        <span class="checkmark">✅</span>
+
+        <div class="card-header">
+          <span class="card-num">Usuario #<%= challenge.id %></span>
+          <span class="card-status pendiente" id="status-<%= challenge.id %>">Pendiente</span>
+        </div>
+
+        <h2><%= challenge.user %></h2>
+
+        <!-- Formulario de flag -->
+        <div class="flag-form">
+          <input
+            type="text"
+            class="flag-input"
+            id="input-<%= challenge.id %>"
+            placeholder="Flisol{tu_flag_aqui}"
+            autocomplete="off"
+          />
+          <input
+            type="text"
+            class="flag-input"
+            id="category-<%= challenge.id %>"
+            value="<%= challenge.category %>"
+            hidden
+          />
+          <button
+            class="btn-submit"
+            id="btn-<%= challenge.id %>"
+            onclick="checkFlag(<%= challenge.id %>)"
+          >
+            Enviar
+          </button>
+        </div>
+
+        <!-- Mensaje resultado -->
+        <div class="msg" id="msg-<%= challenge.id %>"></div>
+
+        <!-- Botón de mensaje -->
+        <button class="btn-mail" onclick="openMail('<%= challenge.id %>', '<%= challenge.user %>','<%= challenge.category%>')" title="Enviar mensaje">
+          ✉️ Mensaje
+        </button>
+      </div>
+      <% }) %>
+
+    </div>
+
+    <!-- Modal estilo mail -->
+    <div class="mail-overlay" id="mail-overlay" onclick="closeMail(event)">
+      <div class="mail-modal">
+        <div class="mail-header">
+          <div class="mail-header-left">
+            <span class="mail-icon">✉️</span>
+            <div>
+              <div class="mail-to-label">Para</div>
+              <div class="mail-to-user" id="mail-to-user">—</div>
+            </div>
+          </div>
+          <button class="mail-close" onclick="closeMail()">✕</button>
+        </div>
+        <div class="mail-body">
+          <input
+            type="text"
+            class="mail-input"
+            id="mail-title"
+            placeholder="Asunto"
+            autocomplete="off"
+          />
+        <div  hidden></div>
+          <textarea
+            class="mail-textarea"
+            id="mail-body-text"
+            placeholder="Escribe tu mensaje aquí..."
+          ></textarea>
+        </div>
+        <div class="mail-footer">
+          <span class="mail-status" id="mail-status"></span>
+          <button class="mail-send-btn" id="mail-send-btn" onclick="sendMail()">
+            Enviar ➤
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .btn-mail {
+        margin-top: 12px;
+        background: none;
+        border: 1px dashed #3a4034;
+        color: #8a9485;
+        font-size: 0.78rem;
+        padding: 5px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s;
+        width: 100%;
+      }
+      .btn-mail:hover { border-color: #ff8c00; color: #ff8c00; }
+
+      .mail-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(3px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .mail-overlay.open { display: flex; }
+
+      .mail-modal {
+        background: #22271e;
+        border: 1px solid #3a4034;
+        border-radius: 14px;
+        width: 100%;
+        max-width: 480px;
+        margin: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: mailSlideIn 0.2s ease;
+      }
+
+      @keyframes mailSlideIn {
+        from { transform: translateY(20px); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
+      }
+
+      .mail-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #3a4034;
+        background: #1c2418;
+      }
+      .mail-header-left { display: flex; align-items: center; gap: 12px; }
+      .mail-icon { font-size: 1.4rem; }
+      .mail-to-label {
+        font-size: 0.7rem;
+        color: #5e6a58;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .mail-to-user { font-size: 0.95rem; font-weight: 600; color: #ff8c00; }
+
+      .mail-close {
+        background: none;
+        border: none;
+        color: #5e6a58;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.15s;
+      }
+      .mail-close:hover { background: #2e3428; color: #c9cfc4; }
+
+      .mail-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+      .mail-input, .mail-textarea {
+        background: #161914;
+        border: 1px solid #3a4034;
+        border-radius: 8px;
+        padding: 9px 12px;
+        color: #c9cfc4;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.15s;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+      .mail-input:focus, .mail-textarea:focus { border-color: #ff8c00; }
+      .mail-input::placeholder, .mail-textarea::placeholder { color: #3a4034; }
+      .mail-textarea { resize: vertical; min-height: 120px; }
+
+      .mail-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        border-top: 1px solid #3a4034;
+        background: #1c2418;
+      }
+      .mail-status { font-size: 0.78rem; }
+
+      .mail-send-btn {
+        background: #ff8c00;
+        color: #1a1d18;
+        border: none;
+        border-radius: 8px;
+        padding: 9px 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .mail-send-btn:hover { background: #e07a00; }
+      .mail-send-btn:disabled { background: #2e3428; color: #3a4034; cursor: not-allowed; }
+    </style>
+
+    <script>
+      document.querySelectorAll('.card.resolver').forEach(card => {
+        const id = card.id.replace('card-', '');
+        markResolved(id);
+      });
+
+      let mailUserId = null;
+      let categoryPag= null;
+
+      function openMail(userId, userName, category) {
+        mailUserId = userId;
+        categoryPag = category
+        document.getElementById('mail-to-user').textContent = userName;
+        document.getElementById('mail-title').value = '';
+        document.getElementById('mail-body-text').value = '';
+        document.getElementById('mail-status').textContent = '';
+        document.getElementById('mail-send-btn').disabled = false;
+        document.getElementById('mail-send-btn').textContent = 'Enviar ➤';
+        document.getElementById('mail-overlay').classList.add('open');
+      }
+
+      function closeMail(e) {
+        if (e && e.target !== document.getElementById('mail-overlay')) return;
+        document.getElementById('mail-overlay').classList.remove('open');
+        mailUserId = null;
+        categoryPag= null
+      }
+
+      async function sendMail() {
+        const title = document.getElementById('mail-title').value.trim();
+        const body   = document.getElementById('mail-body-text').value.trim();
+        const status = document.getElementById('mail-status');
+        const btn    = document.getElementById('mail-send-btn');
+
+        if (!title || !body) {
+          status.textContent = '⚠ Completa asunto y mensaje.';
+          status.style.color = '#d9603a';
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '…';
+        status.textContent = '';
+
+        try {
+          const res = await fetch('/api/mail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: mailUserId, title, body,category:categoryPag })
+          });
+
+          if (res.status === 200) {
+            status.textContent = '✓ Enviado';
+            status.style.color = '#7ab648';
+            btn.textContent = '✅';
+            setTimeout(() => closeMail(), 1200);
+          } else if (res.status === 202) {
+            status.textContent = '✗ Este usuario está ocupado revisando el sitio';
+            status.style.color = '#ff8c00';
+            btn.disabled = false;
+            btn.textContent = 'Enviar ➤'; 
+          }else {
+            status.textContent = '✗ Error al enviar';
+            status.style.color = '#d9603a';
+            btn.disabled = false;
+            btn.textContent = 'Enviar ➤';
+          }
+        } catch (e) {
+          status.textContent = '✗ Sin conexión';
+          status.style.color = '#d9603a';
+          btn.disabled = false;
+          btn.textContent = 'Enviar ➤';
+        }
+      }
+    </script>

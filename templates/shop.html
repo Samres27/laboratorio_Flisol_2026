@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Shop - Django Shop{% endblock %}
+{% block content %}
+
+<section style="background: url('https://via.placeholder.com/1400x200?text=Shop') center/cover; padding:50px 0; text-align:center; color:#333;">
+    <h2 style="font-weight:700;">Shop</h2>
+    <p>All categories</p>
+</section>
+
+<section style="padding:50px 0; background:#fff;">
+    <div class="container">
+        <div class="row">
+
+            <!-- Sidebar -->
+            <div class="col-md-3 mb-4">
+                <h5 class="font-weight-bold mb-3">Categories</h5>
+                <ul class="list-unstyled mb-4">
+                    <li><a href="/shop/" class="text-dark">All</a></li>
+                    <li><a href="/shop/?cat=Shoes" class="text-dark">Shoes</a></li>
+                    <li><a href="/shop/?cat=Clothing" class="text-dark">Clothing</a></li>
+                    <li><a href="/shop/?cat=Accessories" class="text-dark">Accessories</a></li>
+                </ul>
+
+                <div class="input-group mb-2">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search Products...">
+                    <div class="input-group-append">
+                        <button class="btn btn-dark" id="searchBut"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <div id="result" style="font-size:0.85rem; color:#555; margin-top:8px;"></div>
+            </div>
+
+            <!-- Products -->
+            <div class="col-md-9">
+                <div class="row" id="product-container">
+                    {% for product in products %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div style="height:260px; overflow:hidden; background:#f5f5f5;">
+                                <img src="{{ product.image }}" class="card-img-top" alt="{{ product.title }}" style="height:100%;object-fit:cover;" onerror="this.src='https://via.placeholder.com/300x260?text=Product'">
+                            </div>
+                            <div class="card-body">
+                                <a href="/product/{{ product.slug }}/" class="d-block font-weight-bold text-dark mb-1">{{ product.title }}</a>
+                                <span class="text-muted">${{ product.price }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<script>
+    function sanitize(text) {
+        return text.replace(/</, "").replace(/>/, "");
+    }
+    function Search(query) {
+        const result = document.getElementById("result");
+        const container = document.getElementById("product-container");
+
+        result.innerHTML = "Search results: " + sanitize(query);  
+
+        fetch(`/ajax/search/?q=${query}`)
+            .then(r => r.json())
+            .then(data => {
+                container.innerHTML = "";
+                data.items.forEach(item => {
+                    container.innerHTML += `
+                    <div class="col-md-4 mb-4">
+                        <div class="card border-0 shadow-sm">
+                            <div style="height:260px;overflow:hidden;background:#f5f5f5;">
+                                <img src="${item.image}" style="height:100%;object-fit:cover;" onerror="this.src='https://via.placeholder.com/300x260?text=Product'">
+                            </div>
+                            <div class="card-body">
+                                <a href="${item.url}" class="d-block font-weight-bold text-dark">${item.title}</a>
+                                <span class="text-muted">$${item.price}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const searchBut = document.getElementById("searchBut");
+        const searchInput = document.getElementById("searchInput");
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.get('search')) Search(urlParams.get('search'));
+
+        searchBut.addEventListener("click", function() {
+            Search(searchInput.value);
+        });
+
+        searchInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") Search(searchInput.value);
+        });
+    });
+</script>
+{% endblock %}

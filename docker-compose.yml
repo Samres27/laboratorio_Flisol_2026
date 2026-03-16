@@ -1,0 +1,68 @@
+version: "3.9"
+
+# =============================================================
+#  Laboratorio XSS + HTTP Request Smuggling
+#
+#  Arquitectura:
+#    Cliente  → HAProxy:80  → Flask/Gunicorn:8000
+#    victim   → django:8000 (bot interno con cookie flagFlisol)
+# =============================================================
+
+services:
+
+  flask:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8000"
+    networks:
+      - lab_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
+
+  haproxy:
+    image: vladimirjk/haproxy-docker-logs:1.8-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:80:80"
+      - "8404:8404"
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - flask
+    networks:
+      - lab_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
+
+  victim:
+    build:
+      context: ./victim
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - TARGET_URL=http://haproxy
+      - VISIT_INTERVAL=1
+    ports:
+      - "127.0.0.1:2780:8080"
+    depends_on:
+      - flask
+    networks:
+      - lab_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
+
+networks:
+  lab_net:
+    driver: bridge

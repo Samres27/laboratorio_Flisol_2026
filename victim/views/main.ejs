@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CTF – Retos XSS</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #1a1d18;
+      color: #c9cfc4;
+      min-height: 100vh;
+    }
+
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #22271e;
+      border-right: 1px solid #3a4034;
+      padding: 24px 0;
+      flex-shrink: 0;
+    }
+
+    .sidebar .logo {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ff8c00;
+      padding: 0 20px 24px;
+      border-bottom: 1px solid #3a4034;
+      letter-spacing: 1px;
+    }
+
+    .sidebar nav {
+      margin-top: 16px;
+    }
+
+    .sidebar nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      color: #8a9485;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.15s;
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: #2e3428;
+      color: #c9cfc4;
+      border-left: 3px solid #ff8c00;
+    }
+
+    .sidebar nav a .badge {
+      margin-left: auto;
+      background: #ff8c00;
+      color: #1a1d18;
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+
+    .main {
+      flex: 1;
+      padding: 32px 40px;
+      overflow-y: auto;
+    }
+
+    .page-header {
+      margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ff8c00;
+    }
+
+    .page-header p {
+      color: #5e6a58;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+
+    .progress-bar-wrap {
+      background: #2e3428;
+      border-radius: 8px;
+      height: 8px;
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff8c00, #e06b00);
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 8px;
+    }
+
+    .progress-label {
+      font-size: 0.8rem;
+      color: #8a9485;
+      margin-bottom: 8px;
+    }
+
+
+    .retos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+
+    .card {
+      background: #22271e;
+      border: 1px solid #3a4034;
+      border-radius: 12px;
+      padding: 24px;
+      transition: border-color 0.2s, transform 0.2s;
+      position: relative;
+    }
+
+    .card:hover {
+      border-color: #ff8c00;
+      transform: translateY(-2px);
+    }
+
+    .card.resuelto {
+      border-color: #5a7a3a !important;
+      background: #1c2418;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-num {
+      font-size: 0.75rem;
+      color: #ff8c00;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .card-status {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .card-status.pendiente {
+      background: #2e3428;
+      color: #8a9485;
+    }
+
+    .card-status.correcto {
+      background: #1c2e14;
+      color: #7ab648;
+    }
+
+    .card h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #c9cfc4;
+    }
+
+    .card p.desc {
+      font-size: 0.875rem;
+      color: #5e6a58;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+
+
+    /* ── Formulario de flag ───────────────────────────────────── */
+    .flag-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .flag-input {
+      flex: 1;
+      background: #161914;
+      border: 1px solid #3a4034;
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #c9cfc4;
+      font-size: 0.85rem;
+      font-family: 'Courier New', monospace;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .flag-input::placeholder {
+      color: #3a4034;
+    }
+
+    .flag-input:focus {
+      border-color: #ff8c00;
+    }
+
+    .flag-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-submit {
+      background: #ff8c00;
+      color: #1a1d18;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-submit:hover {
+      background: #e07a00;
+    }
+
+    .btn-submit:disabled {
+      background: #2e3428;
+      cursor: not-allowed;
+      color: #3a4034;
+    }
+
+    /* ── Mensaje de respuesta ─────────────────────────────────── */
+    .msg {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      padding: 7px 12px;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .msg.show {
+      display: block;
+    }
+
+    .msg.ok {
+      background: #1c2e14;
+      color: #7ab648;
+      border: 1px solid #5a7a3a;
+    }
+
+    .msg.err {
+      background: #2e1a14;
+      color: #d9603a;
+      border: 1px solid #a03a20;
+    }
+
+    /* ── Icono de check ───────────────────────────────────────── */
+    .checkmark {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 1.3rem;
+      display: none;
+    }
+
+    .card.resuelto .checkmark {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo"> CTF Panel</div>
+      <nav>
+        <a onclick="mainLoad('usuarios')">👥 Usuarios</a>
+        <a onclick="mainLoad('xss')">
+          XSS
+
+        </a>
+        <a onclick="mainLoad('csrf')">
+          CSRF
+        </a>
+      </nav>
+    </aside>
+
+
+    <main class="main">
+
+    </main>
+  </div>
+
+  <script>
+
+    function runnigScripts(container) {
+      container.querySelectorAll('script').forEach(oldScript => {
+        const newScript = document.createElement('script');
+        newScript.textContent = oldScript.textContent;
+        document.body.appendChild(newScript);
+        oldScript.remove();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch("/xss")
+        .then(r => r.text())
+        .then(data => {
+          const main = document.getElementsByClassName("main")[0];
+          main.innerHTML = data;
+          runnigScripts(main);
+        });
+    });
+
+    function mainLoad(name) {
+      fetch("/" + name)
+        .then(r => r.text())
+        .then(data => {
+          const main = document.getElementsByClassName("main")[0];
+          main.innerHTML = data;
+          runnigScripts(main);
+        });
+    }
+    // ── Verificar flag ──────────────────────────────────────────────────────
+    async function checkFlag(challengeId) {
+      const input = document.getElementById('input-' + challengeId);
+      const btn = document.getElementById('btn-' + challengeId);
+      const msg = document.getElementById('msg-' + challengeId);
+      const category = document.getElementById('category-' + challengeId).value.trim();
+      const flag = input.value.trim();
+
+      if (!flag) {
+        showMessage(msg, ' Escribe una flag antes de enviar.', 'err');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '…';
+
+      try {
+        const res = await fetch('/api/check-flag', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId, flag, category })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          // Marcar como resuelto
+          markResolved(challengeId);
+          showMessage(msg, data.mensaje, 'ok');
+        } else {
+          showMessage(msg, data.mensaje, 'err');
+          btn.disabled = false;
+          btn.textContent = 'Enviar';
+        }
+
+      } catch (e) {
+        console.log(e)
+        showMessage(msg, ' Error de conexión con el servidor.', 'err');
+        btn.disabled = false;
+        btn.textContent = 'Enviar';
+      }
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function showMessage(el, text, type) {
+      el.textContent = text;
+      el.className = 'msg show ' + type;
+    }
+
+    function markResolved(challengeId) {
+      console.log(challengeId, "probando");
+      const card = document.getElementById('card-' + challengeId);
+      const status = document.getElementById('status-' + challengeId);
+      const input = document.getElementById('input-' + challengeId);
+      const btn = document.getElementById('btn-' + challengeId);
+
+      card.classList.add('resuelto');
+      status.textContent = 'Resuelto';
+      status.className = 'card-status correcto';
+      input.disabled = true;
+      btn.disabled = true;
+      btn.textContent = '✅';
+
+    }
+
+
+  </script>
+
+</body>
+
+</html>

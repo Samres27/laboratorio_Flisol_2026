@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Home - Django Shop{% endblock %}
+{% block content %}
+
+<div id="ua-data" data-ua="{{ user_agent|safe }}" style="display:none;"></div>
+<div id="browserBanner" style="background:#333;color:#fff;text-align:center;padding:10px;font-size:0.85rem;letter-spacing:1px;"></div>
+
+<!-- Hero -->
+<section style="background: url('https://static.nike.com/a/images/f_auto/dpr_2.0/w_1407,c_limit/a01665bf-08e7-4d5d-8fb6-841382e3f900/nike-just-do-it.jpg') center/cover; height: 500px; display:flex; align-items:center; justify-content:center;">
+    <div style="text-align:center; color:white;">
+        <h1 style="font-size:3rem; font-weight:700; text-shadow:2px 2px 8px rgba(0,0,0,0.7);">New Arrivals</h1>
+        <a href="/shop/" style="background:white;color:#000;padding:12px 32px;border-radius:25px;text-decoration:none;font-weight:600;margin-top:20px;display:inline-block;">Shop Now</a>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section style="padding: 60px 0; background:#fff;">
+    <div class="container">
+        <h3 style="text-align:center; font-weight:700; margin-bottom:40px;">Featured Products</h3>
+        <div class="row">
+            {% for product in products %}
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div style="height:280px; background:#f5f5f5; overflow:hidden;">
+                        <img src="{{ product.image }}" class="card-img-top" alt="{{ product.title }}" style="height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x280?text=Product'">
+                    </div>
+                    <div class="card-body">
+                        <a href="/product/{{ product.slug }}/" class="card-title d-block font-weight-bold text-dark mb-1">{{ product.title }}</a>
+                        <span class="text-muted">${{ product.price }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ua = document.getElementById('ua-data').dataset.ua;
+    let browser = 'your browser';
+    if (ua.includes('Edg'))         browser = 'Microsoft Edge';
+    else if (ua.includes('Chrome')) browser = 'Google Chrome';
+    else if (ua.includes('Firefox'))browser = 'Mozilla Firefox';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    document.getElementById('browserBanner').innerHTML =
+        'Welcome — Our page is compatible with: <strong>' + browser + '</strong>';
+});
+</script>
+{% endblock %}

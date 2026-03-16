@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Django Shop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <style>
+        body { font-family: 'Montserrat', sans-serif; }
+        .navbar { background: #fff; border-bottom: 1px solid #eee; }
+        .navbar-brand { font-weight: 700; font-size: 1.3rem; color: #000 !important; letter-spacing: 2px; }
+        .nav-link { color: #333 !important; font-size: 0.9rem; }
+        .nav-link:hover { color: #000 !important; }
+        footer { background: #222; color: #aaa; padding: 30px 0; margin-top: 60px; text-align: center; font-size: 0.85rem; }
+    </style>
+    
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light sticky-top">
+    <a class="navbar-brand" href="/"><b>D</b>JANGO SHOP</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/shop/">Shop</a></li>
+            <li class="nav-item"><a class="nav-link" href="/chat/">Chat</a></li>
+        </ul>
+    </div>
+</nav>
+
+
+
+<div id="ua-data" data-ua="Wget" style="display:none;"></div>
+<div id="browserBanner" style="background:#333;color:#fff;text-align:center;padding:10px;font-size:0.85rem;letter-spacing:1px;"></div>
+
+<!-- Hero -->
+<section style="background: url('https://static.nike.com/a/images/f_auto/dpr_2.0/w_1407,c_limit/a01665bf-08e7-4d5d-8fb6-841382e3f900/nike-just-do-it.jpg') center/cover; height: 500px; display:flex; align-items:center; justify-content:center;">
+    <div style="text-align:center; color:white;">
+        <h1 style="font-size:3rem; font-weight:700; text-shadow:2px 2px 8px rgba(0,0,0,0.7);">New Arrivals</h1>
+        <a href="/shop/" style="background:white;color:#000;padding:12px 32px;border-radius:25px;text-decoration:none;font-weight:600;margin-top:20px;display:inline-block;">Shop Now</a>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section style="padding: 60px 0; background:#fff;">
+    <div class="container">
+        <h3 style="text-align:center; font-weight:700; margin-bottom:40px;">Featured Products</h3>
+        <div class="row">
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div style="height:280px; background:#f5f5f5; overflow:hidden;">
+                        <img src="/static/images/p1.webp" class="card-img-top" alt="Nike Air Max 90" style="height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x280?text=Product'">
+                    </div>
+                    <div class="card-body">
+                        <a href="/product/nike-air-max-90/" class="card-title d-block font-weight-bold text-dark mb-1">Nike Air Max 90</a>
+                        <span class="text-muted">$120</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div style="height:280px; background:#f5f5f5; overflow:hidden;">
+                        <img src="/static/images/p2.webp" class="card-img-top" alt="Nike ZoomX Vaporfly" style="height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x280?text=Product'">
+                    </div>
+                    <div class="card-body">
+                        <a href="/product/nike-zoomx-vaporfly/" class="card-title d-block font-weight-bold text-dark mb-1">Nike ZoomX Vaporfly</a>
+                        <span class="text-muted">$250</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div style="height:280px; background:#f5f5f5; overflow:hidden;">
+                        <img src="/static/images/p3.webp" class="card-img-top" alt="Nike Dri-FIT T-Shirt" style="height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x280?text=Product'">
+                    </div>
+                    <div class="card-body">
+                        <a href="/product/nike-dri-fit-tshirt/" class="card-title d-block font-weight-bold text-dark mb-1">Nike Dri-FIT T-Shirt</a>
+                        <span class="text-muted">$35</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div style="height:280px; background:#f5f5f5; overflow:hidden;">
+                        <img src="/static/images/p4.webp" class="card-img-top" alt="Nike Pro Leggings" style="height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x280?text=Product'">
+                    </div>
+                    <div class="card-body">
+                        <a href="/product/nike-pro-leggings/" class="card-title d-block font-weight-bold text-dark mb-1">Nike Pro Leggings</a>
+                        <span class="text-muted">$55</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div style="height:280px; background:#f5f5f5; overflow:hidden;">
+                        <img src="/static/images/p5.webp" class="card-img-top" alt="Nike Brasilia Bag" style="height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x280?text=Product'">
+                    </div>
+                    <div class="card-body">
+                        <a href="/product/nike-brasilia-bag/" class="card-title d-block font-weight-bold text-dark mb-1">Nike Brasilia Bag</a>
+                        <span class="text-muted">$45</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div style="height:280px; background:#f5f5f5; overflow:hidden;">
+                        <img src="/static/images/p6.webp" class="card-img-top" alt="Nike Mercurial Cleats" style="height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x280?text=Product'">
+                    </div>
+                    <div class="card-body">
+                        <a href="/product/nike-mercurial-cleats/" class="card-title d-block font-weight-bold text-dark mb-1">Nike Mercurial Cleats</a>
+                        <span class="text-muted">$180</span>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ua = document.getElementById('ua-data').dataset.ua;
+    let browser = 'your browser';
+    if (ua.includes('Edg'))         browser = 'Microsoft Edge';
+    else if (ua.includes('Chrome')) browser = 'Google Chrome';
+    else if (ua.includes('Firefox'))browser = 'Mozilla Firefox';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    document.getElementById('browserBanner').innerHTML =
+        'Welcome — Our page is compatible with: <strong>' + browser + '</strong>';
+});
+</script>
+
+
+<footer>
+    <p>&copy; 2024 Django Shop — Security Lab</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

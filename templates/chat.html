@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}Chat - Django Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-page { background:#f7f7f7; min-height:calc(100vh - 120px); display:flex; flex-direction:column; align-items:center; padding:40px 16px 60px; }
+.chat-container { width:100%; max-width:720px; display:flex; flex-direction:column; gap:16px; }
+.chat-header { background:#fff; border-radius:4px; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 1px 4px rgba(0,0,0,.07); }
+.bot-avatar { width:40px; height:40px; background:#333; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.1rem; }
+.chat-messages { background:#fff; border-radius:4px; padding:24px; min-height:420px; max-height:480px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; box-shadow:0 1px 4px rgba(0,0,0,.07); scroll-behavior:smooth; }
+.msg-row { display:flex; align-items:flex-end; gap:8px; width:100%; }
+.msg-row.user { flex-direction:row-reverse; }
+.msg-avatar { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; }
+.msg-avatar.bot-av { background:#333; color:white; }
+.msg-avatar.user-av { background:#e8e8e8; color:#555; }
+.msg-bubble-wrapper { display:flex; flex-direction:column; max-width:60%; }
+.msg-row.user .msg-bubble-wrapper { align-items:flex-end; }
+.msg-bubble { max-width:100%; min-width:60px; padding:10px 14px; border-radius:18px; font-size:.9rem; line-height:1.5; word-break:break-word; }
+.msg-bubble.bot { background:#f0f0f0; color:#333; border-bottom-left-radius:4px; }
+.msg-bubble.user { background:#333; color:#fff; border-bottom-right-radius:4px; }
+.msg-time { font-size:.68rem; color:#bbb; margin-top:3px; }
+.msg-row.user .msg-time { text-align:right; }
+.welcome-msg { text-align:center; color:#bbb; font-size:.85rem; padding:20px 0; }
+.chat-input-area { background:#fff; border-radius:4px; padding:16px 20px; display:flex; gap:10px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,.07); }
+.chat-input { flex:1; border:1px solid #e0e0e0; border-radius:24px; padding:10px 18px; font-size:.9rem; outline:none; }
+.chat-input:focus { border-color:#333; }
+.btn-send { width:42px; height:42px; background:#333; color:white; border:none; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; }
+.btn-send:hover { background:#000; }
+.btn-send:disabled { background:#ccc; cursor:not-allowed; }
+.connection-status { font-size:.75rem; padding:6px 12px; border-radius:20px; text-align:center; }
+.status-connecting { background:#fff3cd; color:#856404; }
+.status-connected  { background:#d4edda; color:#155724; }
+.status-error      { background:#f8d7da; color:#721c24; }
+.quick-replies { display:flex; flex-wrap:wrap; gap:8px; }
+.quick-reply-btn { padding:6px 14px; border:1px solid #ddd; border-radius:20px; background:white; font-size:.8rem; color:#555; cursor:pointer; }
+.quick-reply-btn:hover { border-color:#333; color:#333; }
+.typing-indicator { display:none; align-items:flex-end; gap:8px; }
+.typing-dots { background:#f0f0f0; border-radius:18px; padding:12px 16px; display:flex; gap:4px; }
+.typing-dots span { width:7px; height:7px; background:#aaa; border-radius:50%; animation:typing 1.2s infinite; }
+.typing-dots span:nth-child(2) { animation-delay:.2s; }
+.typing-dots span:nth-child(3) { animation-delay:.4s; }
+@keyframes typing { 0%,60%,100% { transform:translateY(0); opacity:.5; } 30% { transform:translateY(-6px); opacity:1; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bread-crumb p-3">
+    <a href="/" class="text-dark">Home</a> &rsaquo; <span>Support Chat</span>
+</div>
+
+<div class="chat-page">
+  <div class="chat-container">
+
+    <div class="chat-header">
+      <div class="d-flex align-items-center gap-3">
+        <div class="bot-av bot-avatar mr-3">B</div>
+        <div>
+          <h6 class="mb-0 font-weight-bold">Django Shop Assistant</h6>
+          <small class="text-muted">Responds instantly</small>
+        </div>
+      </div>
+    </div>
+
+    <div id="connectionStatus" class="connection-status status-connecting">Connecting...</div>
+
+    <div class="chat-messages" id="chatMessages">
+      {% if messages_history %}
+        {% for msg in messages_history %}
+        <div class="msg-row {{ msg.sender }}">
+          <div class="msg-avatar {% if msg.sender == 'bot' %}bot-av{% else %}user-av{% endif %}">
+            {% if msg.sender == 'bot' %}B{% else %}U{% endif %}
+          </div>
+          <div class="msg-bubble-wrapper">
+            <!-- WebSocket XSS: content se renderiza sin escapar con |safe -->
+            <div class="msg-bubble {{ msg.sender }}">{{ msg.content|safe }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="welcome-msg" id="welcomeMsg"> Hello! I'm the Django Shop assistant. How can I help you?</div>
+      {% endif %}
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="msg-avatar bot-av">B</div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <div class="quick-replies">
+      <button class="quick-reply-btn" onclick="sendQuickReply('What are the payment methods?')"> Payment</button>
+      <button class="quick-reply-btn" onclick="sendQuickReply('How is the shipping?')"> Shipping</button>
+      <button class="quick-reply-btn" onclick="sendQuickReply('How do I make a return?')">↩ Returns</button>
+      <button class="quick-reply-btn" onclick="sendQuickReply('What sizes do they have?')"> Sizes</button>
+    </div>
+
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" class="chat-input" placeholder="Write your message..." maxlength="500" autocomplete="off">
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()" disabled>
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const SESSION_ID = "{{ session_id }}";
+  const WS_URL = `ws://${window.location.host}/ws/chat/${SESSION_ID}/`;
+
+  let socket = null;
+  const messagesDiv = document.getElementById('chatMessages');
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const statusDiv = document.getElementById('connectionStatus');
+  const typingIndicator = document.getElementById('typingIndicator');
+
+  function connectWebSocket() {
+    socket = new WebSocket(WS_URL);
+    socket.onopen = () => {
+      statusDiv.textContent = '🟢 Connected';
+      statusDiv.className = 'connection-status status-connected';
+      sendBtn.disabled = false;
+      input.focus();
+    };
+    socket.onclose = () => {
+      statusDiv.textContent = '🔴 Disconnected...';
+      statusDiv.className = 'connection-status status-error';
+      sendBtn.disabled = true;
+      setTimeout(connectWebSocket, 3000);
+    };
+    socket.onerror = () => {
+      statusDiv.textContent = '⚠ Connection error';
+      statusDiv.className = 'connection-status status-error';
+    };
+    socket.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if (data.sender === 'bot') hideTyping();
+      appendMessage(data.sender, data.message);
+    };
+  }
+  function sanitize(text) {
+    return text.replace(/[<>]/g, "");
+  }
+  function sendMessage() {
+    const text = sanitize(input.value.trim());
+    if (!text || !socket || socket.readyState !== WebSocket.OPEN) return;
+    const welcome = document.getElementById('welcomeMsg');
+    if (welcome) welcome.remove();
+    socket.send(JSON.stringify({ message: text }));
+    input.value = '';
+    showTyping();
+  }
+
+  function sendQuickReply(text) { input.value = text; sendMessage(); }
+
+  function appendMessage(sender, content) {
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    const row = document.createElement('div');
+    row.className = `msg-row ${sender}`;
+    row.innerHTML = `
+      <div class="msg-avatar ${sender === 'bot' ? 'bot-av' : 'user-av'}">${sender === 'bot' ? 'B' : 'U'}</div>
+      <div class="msg-bubble-wrapper">
+        <div class="msg-bubble ${sender}">${escapeHtml(content)}</div>
+        <div class="msg-time">${time}</div>
+      </div>`;
+    messagesDiv.insertBefore(row, typingIndicator);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(text));
+    return d.innerHTML;
+  }
+
+  function showTyping() { typingIndicator.style.display = 'flex'; messagesDiv.scrollTop = messagesDiv.scrollHeight; }
+  function hideTyping() { typingIndicator.style.display = 'none'; }
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
+  connectWebSocket();
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+</script>
+{% endblock %}
