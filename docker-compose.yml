@@ -1,19 +1,9 @@
-version: "3.9"
-
-# =============================================================
-#  Laboratorio XSS + HTTP Request Smuggling
-#
-#  Arquitectura:
-#    Cliente  → HAProxy:80  → Flask/Gunicorn:8000
-#    victim   → django:8000 (bot interno con cookie flagFlisol)
-# =============================================================
-
 services:
 
   flask:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./xss/Dockerfile
     restart: unless-stopped
     expose:
       - "8000"
@@ -26,7 +16,7 @@ services:
         max-file: "3"  # Maximum number of log files to keep
 
   haproxy:
-    image: vladimirjk/haproxy-docker-logs:1.8-alpine
+    image: haproxy:1.8.31-alpine
     restart: unless-stopped
     ports:
       - "127.0.0.1:80:80"

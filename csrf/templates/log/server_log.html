@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}/log — BlogCSRF Server Logs{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end">
+  <div>
+    <h1>/log</h1>
+    <p>// endpoint de debug del servidor — sin autenticación requerida</p>
+  </div>
+  <span class="badge" style="color:var(--danger);border-color:var(--danger);font-size:11px;padding:5px 10px;">
+    ⚠ sin auth
+  </span>
+</div>
+
+<!-- Banner explicativo de la vulnerabilidad -->
+<div style="background:rgba(201,168,76,.07);border:1px solid var(--accent);border-radius:4px;padding:16px 20px;margin-bottom:28px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;">
+  <div style="color:var(--accent);font-weight:700;margin-bottom:6px;">VULN #1 — Leak via endpoint de logs</div>
+  <div style="color:#a89880;">
+    Este endpoint simula un archivo de logs del servidor expuesto sin autenticación.<br>
+    El servidor persiste el <code style="color:var(--accent);">csrf_token</code> de cada escritor en la base de datos
+    "para auditoría", y esta ruta lo expone en texto plano.<br>
+    Como el token es <strong style="color:var(--danger);">estático</strong> (nunca rota), leerlo una vez
+    es suficiente para forjar <code>POST /post/create</code> indefinidamente.
+  </div>
+</div>
+
+<!-- Terminal -->
+<div style="background:#0a0a0a;border:1px solid #222;border-radius:6px;overflow:hidden;font-family:'IBM Plex Mono',monospace;">
+
+  <!-- Barra de título tipo terminal -->
+  <div style="background:#1a1a1a;padding:10px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #222;">
+    <span style="width:10px;height:10px;border-radius:50%;background:#e05252;display:inline-block;"></span>
+    <span style="width:10px;height:10px;border-radius:50%;background:#d4883a;display:inline-block;"></span>
+    <span style="width:10px;height:10px;border-radius:50%;background:#52a87a;display:inline-block;"></span>
+    <span style="color:#444;font-size:11px;margin-left:8px;">blogcsrf — server.log</span>
+    <span style="margin-left:auto;color:#333;font-size:10px;">tail -f /var/log/blogcsrf/server.log</span>
+  </div>
+
+  <!-- Líneas de log -->
+  <div style="padding:16px;font-size:12px;line-height:2;overflow-x:auto;">
+    {% for entry in entries %}
+
+      {% if entry.highlight and csrf_token %}
+      <!-- ══════════ LÍNEA CON EL TOKEN LEAKEADO ══════════ -->
+      <div style="background:rgba(201,168,76,.12);border-left:3px solid var(--accent);padding:4px 12px;margin:4px -16px;position:relative;">
+        <span style="color:#444;">{{ entry.ts }}</span>
+        &nbsp;
+        <span style="color:#d4883a;font-weight:700;">[{{ entry.level }}]</span>
+        &nbsp;
+        <span style="color:#5a8a6a;">[{{ entry.module }}]</span>
+        &nbsp;
+        <!-- Mensaje con token embebido y destacado -->
+        <span style="color:#8a8070;">
+          [session debug] user_id={{ entry.user_id }} username={{ entry.username }} csrf_token=
+        </span><span style="color:var(--accent);font-weight:700;letter-spacing:0.5px;">{{ csrf_token }}</span>
+        <!-- Etiqueta flotante -->
+        <span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:var(--accent);color:#0a0a0a;font-size:9px;font-weight:700;padding:2px 8px;border-radius:2px;">
+          TOKEN LEAKEADO
+        </span>
+      </div>
+
+      {% elif entry.highlight %}
+      <!-- Token aún no generado (usuario no visitó /post/create) -->
+      <div style="background:rgba(139,58,58,.1);border-left:3px solid var(--accent2);padding:4px 12px;margin:4px -16px;">
+        <span style="color:#444;">{{ entry.ts }}</span>
+        &nbsp;
+        <span style="color:#d4883a;font-weight:700;">[{{ entry.level }}]</span>
+        &nbsp;
+        <span style="color:#5a8a6a;">[{{ entry.module }}]</span>
+        &nbsp;
+        <span style="color:#6a5a4a;">{{ entry.msg }}</span>
+        &nbsp;
+        <span style="color:var(--accent2);font-size:10px;">(token aún no generado — el escritor no ha visitado /post/create)</span>
+      </div>
+
+      {% else %}
+      <!-- Línea de log normal -->
+      <div>
+        <span style="color:#3a3a3a;">{{ entry.ts }}</span>
+        &nbsp;
+        {% if entry.level == 'INFO' %}
+          <span style="color:#4a7eb5;">[INFO ]</span>
+        {% elif entry.level == 'DEBUG' %}
+          <span style="color:#52a87a;">[DEBUG]</span>
+        {% elif entry.level == 'WARN' %}
+          <span style="color:#d4883a;">[WARN ]</span>
+        {% else %}
+          <span style="color:#e05252;">[ERROR]</span>
+        {% endif %}
+        &nbsp;
+        <span style="color:#2a4a3a;">[{{ entry.module }}]</span>
+        &nbsp;
+        <span style="color:#3a3a3a;">{{ entry.msg }}</span>
+      </div>
+      {% endif %}
+
+    {% else %}
+    <div style="color:#3a3a3a;">No hay entradas de log aún.</div>
+    {% endfor %}
+
+    <!-- Cursor parpadeante -->
+    <div style="margin-top:8px;">
+      <span style="color:#444;">$</span>
+      <span style="display:inline-block;width:8px;height:14px;background:#555;margin-left:4px;vertical-align:middle;animation:blink 1s step-end infinite;"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+</style>
+
+<!-- Panel de acción si hay token -->
+{% if csrf_token and first_writer %}
+<div style="margin-top:28px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:24px;">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">
+    Token obtenido — listo para explotar
+  </div>
+
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;margin-bottom:20px;align-items:center;">
+    <span style="color:var(--muted);">Usuario objetivo</span>
+    <span style="color:var(--text);">{{ first_writer.username }} (id={{ first_writer.id }})</span>
+
+    <span style="color:var(--muted);">csrf_token</span>
+    <span style="color:var(--accent);word-break:break-all;">{{ csrf_token }}</span>
+
+    <span style="color:var(--muted);">Endpoint</span>
+    <span style="color:var(--text);">POST /post/create</span>
+
+    <span style="color:var(--muted);">Estado</span>
+    <span style="color:var(--danger);">Token estático — válido indefinidamente</span>
+  </div>
+
+  <!-- Instrucciones para el exploit -->
+  <div style="background:#0a0a0a;border-radius:4px;padding:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a8070;line-height:2;">
+    <div style="color:#3a5a4a;margin-bottom:4px;"># Pasos para explotar:</div>
+    <div>1. Copia el token de arriba</div>
+    <div>2. Edita <span style="color:#a89060;">exploits/exploit_static_token.html</span></div>
+    <div>3. Reemplaza <span style="color:var(--accent);">PEGA_EL_TOKEN_AQUI</span> con el token</div>
+    <div>4. <span style="color:#5a8a6a;">python3 -m http.server 8080</span> &nbsp;(desde /exploits)</div>
+    <div>5. Mientras <span style="color:var(--accent);">{{ first_writer.username }}</span> tiene sesión, ábrele:
+         <span style="color:#4a7eb5;">http://localhost:8080/exploit_static_token.html</span></div>
+    <div style="color:#52a87a;">→ Post creado en su nombre sin su conocimiento</div>
+  </div>
+
+  <!-- Botón de copia rápida -->
+  <div style="margin-top:16px;display:flex;gap:8px;align-items:center;">
+    <button onclick="copyToken()" class="btn btn-ghost btn-sm" id="copy-btn">
+      Copiar token
+    </button>
+    <span id="copy-msg" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--success);opacity:0;transition:opacity .3s;">
+      ✓ Copiado
+    </span>
+  </div>
+</div>
+
+<script>
+  function copyToken() {
+    navigator.clipboard.writeText("{{ csrf_token }}").then(() => {
+      const msg = document.getElementById('copy-msg');
+      msg.style.opacity = '1';
+      setTimeout(() => msg.style.opacity = '0', 2000);
+    });
+  }
+</script>
+
+{% elif first_writer %}
+<div style="margin-top:24px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);">
+  <div style="color:var(--warning);margin-bottom:8px;">⚠ Token aún no disponible</div>
+  El escritor <strong style="color:var(--text);">{{ first_writer.username }}</strong> existe pero
+  todavía no ha visitado <code>/post/create</code>.<br>
+  El token se genera cuando el escritor accede al formulario de creación por primera vez.<br>
+  <span style="color:var(--muted);">Loguéate como ese escritor, visita /post/create y recarga esta página.</span>
+</div>
+
+{% else %}
+<div style="margin-top:24px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);">
+  <div style="color:var(--warning);margin-bottom:8px;">Sin escritores registrados</div>
+  Registra al menos un escritor en <a href="{{ url_for('auth.register') }}" style="color:var(--accent);">/register</a>
+  para ver el leak del token.
+</div>
+{% endif %}
+
+{% endblock %}

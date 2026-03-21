@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} — BlogCSRF{% endblock %}
+
+{% block content %}
+<div style="max-width:780px">
+  <div style="margin-bottom:8px">
+    <a href="{{ url_for('posts.public_feed') }}" class="btn btn-ghost btn-sm">← Feed</a>
+  </div>
+
+  {% if not post.published %}
+  <div class="vuln-banner" style="margin-top:16px">
+    Post en modo borrador — solo visible para su autor
+  </div>
+  {% endif %}
+
+  <h1 class="article-title">{{ post.title }}</h1>
+  <div class="article-meta">
+    por <strong>{{ post.username }}</strong> &nbsp;·&nbsp; {{ post.created_at[:10] }}
+    {% if post.published %}
+      &nbsp;·&nbsp; <span class="badge badge-pub">publicado</span>
+    {% else %}
+      &nbsp;·&nbsp; <span class="badge badge-draft">borrador</span>
+    {% endif %}
+  </div>
+
+  <div class="article-body">
+    {% for line in post.body.split('\n') %}
+      {% if line.strip() %}<p>{{ line }}</p>{% endif %}
+    {% endfor %}
+  </div>
+
+  {% if post.published %}
+  <div class="share-box">
+    <div style="margin-bottom:6px;font-weight:500;color:var(--text)">Compartir este post</div>
+    <span class="share-url">{{ request.url }}</span>
+  </div>
+  {% endif %}
+
+  {% if session.role == 'writer' %}
+  <div class="mt-24 flex gap-8">
+    <a href="{{ url_for('posts.edit_post', post_id=post.id) }}" class="btn btn-ghost btn-sm">Editar</a>
+    <!-- VULNERABLE: POST sin token CSRF -->
+    <form method="POST" action="{{ url_for('posts.delete_post', post_id=post.id) }}"
+          onsubmit="return confirm('¿Eliminar este post?')">
+      <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}BlogCSRF{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d0d;
+      --bg2:       #141414;
+      --bg3:       #1c1c1c;
+      --border:    #2a2a2a;
+      --border2:   #383838;
+      --text:      #e8e4dc;
+      --muted:     #7a7570;
+      --accent:    #c9a84c;
+      --accent2:   #8b3a3a;
+      --danger:    #e05252;
+      --success:   #52a87a;
+      --warning:   #d4883a;
+      --info:      #4a7eb5;
+      --mono:      'IBM Plex Mono', monospace;
+      --serif:     'Playfair Display', serif;
+      --body-font: 'Source Serif 4', serif;
+      --radius:    4px;
+    }
+
+    html { background: var(--bg); color: var(--text); font-family: var(--body-font); font-size: 16px; }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── NAV ── */
+    nav {
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; gap: 0;
+      padding: 0 24px; height: 56px;
+    }
+    .nav-brand {
+      font-family: var(--serif);
+      font-size: 20px; font-weight: 900;
+      color: var(--accent); text-decoration: none;
+      letter-spacing: -0.5px;
+      margin-right: auto;
+    }
+    .nav-brand span { color: var(--accent2); }
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-family: var(--mono); font-size: 12px;
+      padding: 6px 14px; border-radius: var(--radius);
+      transition: color .15s, background .15s;
+      letter-spacing: 0.5px;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--bg3); }
+    .nav-links a.active { color: var(--accent); }
+    .nav-badge {
+      font-family: var(--mono); font-size: 10px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--muted); padding: 3px 8px; border-radius: 2px;
+      margin-left: 8px;
+    }
+    .nav-badge.admin { color: var(--accent2); border-color: var(--accent2); }
+    .nav-badge.writer { color: var(--info); border-color: var(--info); }
+
+    /* ── LAYOUT ── */
+    main { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; padding: 40px 24px; }
+
+    /* ── FLASH MESSAGES ── */
+    .flash-wrap { max-width: 1100px; margin: 0 auto; padding: 12px 24px 0; }
+    .flash {
+      font-family: var(--mono); font-size: 12px;
+      padding: 10px 16px; border-radius: var(--radius);
+      border-left: 3px solid; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .flash.success { background: rgba(82,168,122,.08); border-color: var(--success); color: var(--success); }
+    .flash.error   { background: rgba(224,82,82,.08);  border-color: var(--danger);  color: var(--danger); }
+    .flash.info    { background: rgba(74,126,181,.08); border-color: var(--info);    color: var(--info); }
+
+    /* ── PAGE HEADER ── */
+    .page-header { margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+    .page-header h1 {
+      font-family: var(--serif); font-size: 36px; font-weight: 900;
+      color: var(--text); letter-spacing: -1px; line-height: 1.1;
+    }
+    .page-header p { color: var(--muted); font-size: 14px; margin-top: 6px; font-family: var(--mono); }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      transition: border-color .2s;
+    }
+    .card:hover { border-color: var(--border2); }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead tr { border-bottom: 1px solid var(--border2); }
+    th {
+      font-family: var(--mono); font-size: 11px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); padding: 10px 16px; text-align: left;
+    }
+    td { padding: 14px 16px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .1s; }
+    tbody tr:hover { background: var(--bg3); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--mono); font-size: 12px; font-weight: 500;
+      padding: 8px 16px; border-radius: var(--radius);
+      border: 1px solid transparent; cursor: pointer;
+      text-decoration: none; transition: all .15s;
+      letter-spacing: 0.3px;
+    }
+    .btn-primary  { background: var(--accent); color: #0d0d0d; border-color: var(--accent); }
+    .btn-primary:hover { background: #d4b45a; }
+    .btn-ghost    { background: transparent; color: var(--muted); border-color: var(--border2); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+    .btn-danger   { background: transparent; color: var(--danger); border-color: var(--danger); }
+    .btn-danger:hover { background: rgba(224,82,82,.1); }
+    .btn-warning  { background: transparent; color: var(--warning); border-color: var(--warning); }
+    .btn-warning:hover { background: rgba(212,136,58,.1); }
+    .btn-success  { background: transparent; color: var(--success); border-color: var(--success); }
+    .btn-success:hover { background: rgba(82,168,122,.1); }
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block; font-family: var(--mono); font-size: 11px;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    input[type=text], input[type=password], textarea, select {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--text); font-family: var(--body-font); font-size: 15px;
+      padding: 10px 14px; border-radius: var(--radius);
+      outline: none; transition: border-color .2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { min-height: 220px; resize: vertical; line-height: 1.7; }
+    .check-row { display: flex; align-items: center; gap: 10px; }
+    input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-block; font-family: var(--mono); font-size: 10px;
+      padding: 3px 8px; border-radius: 2px; border: 1px solid;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .badge-admin   { color: var(--accent);  border-color: var(--accent); }
+    .badge-writer  { color: var(--info);    border-color: var(--info); }
+    .badge-banned  { color: var(--danger);  border-color: var(--danger); background: rgba(224,82,82,.07); }
+    .badge-active  { color: var(--success); border-color: var(--success); }
+    .badge-pub     { color: var(--success); border-color: var(--success); }
+    .badge-draft   { color: var(--muted);   border-color: var(--border2); }
+
+    /* ── STATS GRID ── */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 40px; }
+    .stat-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px;
+    }
+    .stat-card .num {
+      font-family: var(--serif); font-size: 42px; font-weight: 900;
+      color: var(--accent); line-height: 1;
+    }
+    .stat-card .label { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 6px; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ── VULNERABILITY BANNER ── */
+    .vuln-banner {
+      background: rgba(139,58,58,.12); border: 1px solid var(--accent2);
+      border-radius: var(--radius); padding: 10px 16px;
+      font-family: var(--mono); font-size: 11px; color: var(--accent2);
+      display: flex; align-items: center; gap: 10px; margin-bottom: 24px;
+    }
+    .vuln-banner::before { content: '⚠ CSRF'; font-weight: 700; }
+
+    /* ── POST CARDS ── */
+    .post-grid { display: grid; gap: 16px; }
+    .post-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      transition: border-color .2s, transform .2s;
+    }
+    .post-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+    .post-card h2 { font-family: var(--serif); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .post-card h2 a { color: var(--text); text-decoration: none; }
+    .post-card h2 a:hover { color: var(--accent); }
+    .post-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+    .post-meta span { margin-right: 16px; }
+    .post-excerpt { color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .post-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+    /* ── ARTICLE ── */
+    .article-title { font-family: var(--serif); font-size: 42px; font-weight: 900; line-height: 1.15; letter-spacing: -1px; margin-bottom: 12px; }
+    .article-meta { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 32px; }
+    .article-body { font-size: 17px; line-height: 1.9; color: #ccc9c1; max-width: 680px; }
+    .article-body p { margin-bottom: 1.2em; }
+
+    /* ── SHARE BOX ── */
+    .share-box {
+      background: var(--bg3); border: 1px dashed var(--border2);
+      border-radius: var(--radius); padding: 14px 16px;
+      font-family: var(--mono); font-size: 12px; color: var(--muted);
+      margin-top: 32px;
+    }
+    .share-url { color: var(--accent); word-break: break-all; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center; padding: 20px;
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center; padding: 60px 24px;
+      color: var(--muted); font-family: var(--mono); font-size: 13px;
+    }
+    .empty strong { display: block; font-family: var(--serif); font-size: 24px; color: var(--border2); margin-bottom: 8px; font-weight: 700; }
+
+    /* ── AUTH FORM ── */
+    .auth-wrap { max-width: 400px; margin: 80px auto; }
+    .auth-logo { text-align: center; margin-bottom: 40px; }
+    .auth-logo h1 { font-family: var(--serif); font-size: 32px; font-weight: 900; color: var(--accent); }
+    .auth-logo p  { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── DIVIDER ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+    .text-danger { color: var(--danger); }
+    .text-muted  { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .mt-24 { margin-top: 24px; }
+    .flex { display: flex; }
+    .gap-8 { gap: 8px; }
+    .gap-16 { gap: 16px; }
+    .justify-between { justify-content: space-between; }
+    .align-center { align-items: center; }
+  </style>
+</head>
+<body>
+
+{% if session.user_id %}
+<nav>
+  <div class="nav-inner">
+    <a href="{{ url_for('posts.public_feed') }}" class="nav-brand">Blog<span>CSRF</span></a>
+    <div class="nav-links">
+      {% if session.role == 'admin' %}
+        <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('admin.users') }}">Usuarios</a>
+        <a href="{{ url_for('admin.all_posts') }}">Posts</a>
+        <a href="{{ url_for('posts.public_feed') }}">Feed</a>
+        <span class="nav-badge admin">admin</span>
+      {% else %}
+        <a href="{{ url_for('posts.public_feed') }}">Feed</a>
+        <a href="{{ url_for('posts.my_posts') }}">Mis posts</a>
+        <a href="{{ url_for('posts.create_post') }}">+ Nuevo</a>
+        <span class="nav-badge writer">{{ session.username }}</span>
+      {% endif %}
+      <a href="{{ url_for('auth.logout') }}">Salir</a>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer>
+  BlogCSRF — Entorno educativo de ciberseguridad 
+</footer>
+</body>
+</html>

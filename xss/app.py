@@ -5,6 +5,7 @@ import uuid
 import sqlite3
 
 app = Flask(__name__)
+app.config['DEBUG'] = True
 sock = Sock(app)
 
 # ─────────────────────────────────────────

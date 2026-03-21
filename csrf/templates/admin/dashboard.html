@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Admin — BlogCSRF{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Panel de administración</h1>
+  <p>// Sesión activa: {{ session.username }} · rol: admin</p>
+</div>
+
+<div class="vuln-banner">
+  Las acciones de gestión (banear, eliminar) son vulnerables a CSRF — sin tokens de protección
+</div>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="num">{{ total_users }}</div>
+    <div class="label">Escritores registrados</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ total_posts }}</div>
+    <div class="label">Posts totales</div>
+  </div>
+</div>
+
+<div class="page-header" style="margin-top:0">
+  <h1 style="font-size:22px">Actividad reciente</h1>
+</div>
+
+{% if recent_posts %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Título</th>
+        <th>Autor</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in recent_posts %}
+      <tr>
+        <td><a href="{{ url_for('posts.view_post', post_id=p.id) }}" style="color:var(--accent);text-decoration:none">{{ p.title }}</a></td>
+        <td style="font-family:var(--mono);font-size:12px">{{ p.username }}</td>
+        <td>
+          {% if p.published %}
+            <span class="badge badge-pub">publicado</span>
+          {% else %}
+            <span class="badge badge-draft">borrador</span>
+          {% endif %}
+        </td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">{{ p.created_at[:10] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><strong>Sin actividad</strong>No hay posts aún.</div>
+{% endif %}
+
+<div class="mt-24 flex gap-8">
+  <a href="{{ url_for('admin.users') }}" class="btn btn-ghost">Gestionar usuarios →</a>
+  <a href="{{ url_for('admin.all_posts') }}" class="btn btn-ghost">Ver todos los posts →</a>
+</div>
+{% endblock %}
