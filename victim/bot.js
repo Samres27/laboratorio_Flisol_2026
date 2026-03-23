@@ -20,7 +20,7 @@ db.findOne({ category: 'xss', id: 5, inhabited: false }, (err, chal) => {
     FLAG_VALUE = chal.flag;
 })
 // funcions whit 
-const TARGET_URL = process.env.TARGET_URL || 'http://haproxy';
+const TARGET_URL = process.env.TARGET_URL || 'http://xss';
 
 const VISIT_INTERVAL = parseFloat(process.env.VISIT_INTERVAL || '0.6') * 1000;
 
@@ -59,7 +59,7 @@ async function main() {
 
             await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
 
-            const domains = ['flask', 'haproxy', 'localhost'];
+            const domains = ['flask', 'haproxy', 'localhost','xss'];
 
             for (const domain of domains) {
                 await page.setCookie({

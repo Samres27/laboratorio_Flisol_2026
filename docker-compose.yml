@@ -1,50 +1,67 @@
 services:
+  # flask:
+  #   build:
+  #     context: .
+  #     dockerfile: ./xss/Dockerfile
+  #   restart: unless-stopped
+    
+  #   expose:
+  #     - "8000"
+  #   networks:
+  #     - lab_net
+    
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+  #       max-file: "3"  # Maximum number of log files to keep
 
-  flask:
+  # xss:
+  #   image: vladimirjk/haproxy-docker-logs:1.8-alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - "127.0.0.1:80:80"
+  #     - "8404:8404"
+  #   volumes:
+  #     - ./xss/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+  #   depends_on:
+  #     - flask
+  #   networks:
+  #     - lab_net
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+  #       max-file: "3"  # Maximum number of log files to keep
+
+  csrf:
     build:
       context: .
-      dockerfile: ./xss/Dockerfile
-    restart: unless-stopped
-    expose:
-      - "8000"
-    networks:
-      - lab_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-        max-file: "3"  # Maximum number of log files to keep
-
-  haproxy:
-    image: haproxy:1.8.31-alpine
+      dockerfile: ./csrf/dockerfile
     restart: unless-stopped
     ports:
-      - "127.0.0.1:80:80"
-      - "8404:8404"
-    volumes:
-      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-    depends_on:
-      - flask
+      - "127.0.0.1:81:8000"
     networks:
       - lab_net
+
     logging:
       driver: "json-file"
       options:
         max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
         max-file: "3"  # Maximum number of log files to keep
-
   victim:
     build:
       context: ./victim
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      - TARGET_URL=http://haproxy
+      - TARGET_URL=http://xss
       - VISIT_INTERVAL=1
     ports:
       - "127.0.0.1:2780:8080"
     depends_on:
-      - flask
+      # - xss
+      - csrf
     networks:
       - lab_net
     logging:

@@ -7,4 +7,5 @@ gunicorn --keep-alive 10 \
     -k gevent \
     -w 4 \
     -b 0.0.0.0:8000 \
-    app:app 
+    app:app \
+    --log-level debug

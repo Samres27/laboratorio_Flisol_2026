@@ -1,3 +1,5 @@
+const path = require('path');
+
 const fs = require('fs');
 
 if (!fs.existsSync('./retos.db')) {
@@ -5,7 +7,7 @@ if (!fs.existsSync('./retos.db')) {
   const Datastore = require("nedb")
 
   const db = new Datastore({
-    filename: "retos.db",
+    filename: path.join(__dirname, 'retos.db'),
     autoload: true
   })
 
@@ -66,7 +68,7 @@ if (!fs.existsSync('./rutas.db')) {
   const Datastore = require("nedb")
 
   const rutes = new Datastore({
-    filename: "rutas.db",
+    filename: path.join(__dirname, 'rutas.db'),
     autoload: true
   })
 }
