@@ -62,7 +62,7 @@ def login():
 
         if user and user["password"] == hash_password(password):
             if user["banned"]:
-                flash("Tu cuenta ha sido suspendida.", "error")
+                flash("Your account has been suspended.", "error")
                 return redirect(url_for("auth.login"))
             session.clear()
             session["user_id"] = user["id"]
@@ -72,8 +72,6 @@ def login():
             if user["role"] == "admin":
                 return redirect(url_for("admin.dashboard"))
 
-            # Generar delete_token al hacer login y guardarlo en DB
-            # El after_request lo pone en la cookie en la respuesta del redirect
             import hashlib, os
             token = hashlib.sha256(os.urandom(16)).hexdigest()
             db.execute(
@@ -87,7 +85,7 @@ def login():
             session["_delete_token"] = token  # el after_request lo lee para emitir la cookie
 
             return redirect(url_for("posts.my_posts"))
-        flash("Credenciales incorrectas.", "error")
+        flash("Incorrect credentials.", "error")
     return render_template("auth/login.html")
 
 
@@ -102,17 +100,17 @@ def register():
             "SELECT id FROM users WHERE username = ?", (username,)
         ).fetchone()
         if existing:
-            flash("El nombre de usuario ya existe.", "error")
+            flash("The username already exists.", "error")
             return redirect(url_for("auth.register"))
         if len(username) < 3 or len(password) < 4:
-            flash("Usuario mínimo 3 chars, contraseña mínimo 4.", "error")
+            flash("Minimum username 3 characters, minimum password 4.", "error")
             return redirect(url_for("auth.register"))
         db.execute(
             "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
             (username, hash_password(password), "writer"),
         )
         db.commit()
-        flash("Cuenta creada. Inicia sesión.", "success")
+        flash("Account created. Log in.", "success")
         return redirect(url_for("auth.login"))
     return render_template("auth/register.html")
 

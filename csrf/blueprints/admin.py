@@ -45,12 +45,12 @@ def users():
 def ban_user():
     user_id = request.form.get("user_id")
     if not user_id:
-        flash("user_id requerido.", "error")
+        flash("user_id required.", "error")
         return redirect(url_for("admin.users"))
     db = get_db()
     db.execute("UPDATE users SET banned=1 WHERE id=? AND role='writer'", (user_id,))
     db.commit()
-    flash("Usuario suspendido.", "success")
+    flash("User suspended.", "success")
     return redirect(url_for("admin.users"))
 
 
@@ -62,7 +62,7 @@ def unban_user():
     db = get_db()
     db.execute("UPDATE users SET banned=0 WHERE id=? AND role='writer'", (user_id,))
     db.commit()
-    flash("Usuario reactivado.", "success")
+    flash("User reactivated.", "success")
     return redirect(url_for("admin.users"))
 
 
@@ -74,7 +74,7 @@ def delete_user():
     db = get_db()
     db.execute("DELETE FROM users WHERE id=? AND role='writer'", (user_id,))
     db.commit()
-    flash("Usuario eliminado.", "success")
+    flash("User removed.", "success")
     return redirect(url_for("admin.users"))
 
 

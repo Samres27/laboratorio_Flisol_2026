@@ -11,8 +11,6 @@ import logging
 posts_bp = Blueprint("posts", __name__)
 
 
-# ── HELPER: token CSRF estático ──────────────────────────────────
-
 def _get_static_csrf_token():
    
     user_id = session.get("user_id")
@@ -61,22 +59,18 @@ def _check_static_csrf_token():
         ).fetchone()
         if row and form_token == row["csrf_token"]:
             session["csrf_token"] = row["csrf_token"]  
-            return  # OK
+            return  
 
     abort(403)
 
 
 def _check_referer():
     referer = request.headers.get("Referer", "")
-    if ("localhost" not in referer):# or en el dominio del contenedor docker
+    if ("localhost" not in referer):
         abort(403)
     
 
 
-# ── COOKIE delete_token ──────────────────────────────────────────
-#
-# VULNERABILIDAD 2: la cookie se emite con SameSite=Lax pero el
-# endpoint de delete acepta GET además de POST.
 
 
 def _set_delete_cookie(response):
@@ -152,7 +146,7 @@ def view_post(post_id):
         abort(403)
     return render_template("posts/detail.html", post=post)
 
-@posts_bp.before_request
+#@posts_bp.before_request
 def log_cookies():
     print(session)
     print("Request cookies:", request.cookies)
@@ -184,7 +178,7 @@ def create_post():
         published = 1 if int(request.form.get("published")) else 0
 
         if not title or not body:
-            flash("Título y contenido son obligatorios.", "error")
+            flash("Title and content are mandatory.", "error")
             return redirect(url_for("posts.create_post"))
 
         db = get_db()
@@ -204,11 +198,9 @@ def create_post():
 @posts_bp.route("/post/delete/<int:post_id>", methods=["GET", "POST"])
 @require_role("writer")
 def delete_post(post_id):
-    print("llamada al post 1")
     
     cookie_token = request.cookies.get("delete_token", "")
     if not cookie_token:
-        print("Token de eliminación ausente.", "error")
         return redirect(url_for("posts.my_posts"))
 
     db = get_db()
@@ -219,17 +211,15 @@ def delete_post(post_id):
     logging.info("cookie_token: %s", cookie_token)
     logging.info("db_token:     %s", row["token"] if row else "NO EXISTE")
     if not row or cookie_token != row["token"]:
-        print("Token de eliminación inválido.", "error")
         return redirect(url_for("posts.my_posts"))
 
-    print("llamada al post 2")
+
     post = db.execute("SELECT author_id FROM posts WHERE id=?", (post_id,)).fetchone()
     if not post or post["author_id"] != session["user_id"]:
         abort(403)
 
     db.execute("DELETE FROM posts WHERE id=?", (post_id,))
     db.commit()
-    print("Post eliminado.", "success")
 
     response = make_response(redirect(url_for("posts.my_posts")))
     _set_delete_cookie(response)
@@ -251,7 +241,7 @@ def share_post(post_id):
         abort(403)
     db.execute("UPDATE posts SET published=1 WHERE id=?", (post_id,))
     db.commit()
-    flash("Post compartido y published.", "success")
+    flash("Post shared and published.", "success")
     return redirect(url_for("posts.my_posts"))
 
 
@@ -275,7 +265,7 @@ def edit_post(post_id):
             (title, body, published, post_id),
         )
         db.commit()
-        flash("Post actualizado.", "success")
+        flash("Post updated.", "success")
         return redirect(url_for("posts.my_posts"))
     return render_template("posts/edit.html", post=post)
 
