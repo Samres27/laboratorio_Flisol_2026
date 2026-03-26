@@ -39,8 +39,10 @@ services:
       context: .
       dockerfile: ./csrf/dockerfile
     restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
     ports:
-      - "127.0.0.1:81:8000"
+      - "127.0.0.1:81:80"
     networks:
       - lab_net
 
@@ -57,6 +59,8 @@ services:
     environment:
       - TARGET_URL=http://xss
       - VISIT_INTERVAL=1
+    volumes:
+      - ./victim/:/app/
     ports:
       - "127.0.0.1:2780:8080"
     depends_on:

@@ -26,32 +26,10 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(posts_bp)
     app.register_blueprint(log_bp)
-
-    @app.after_request
-    def write_access_log(response):
-        if request.path == "/log":
-            return response
-        try:
-            db = get_db()
-            db.execute(
-                "INSERT INTO access_log (ts, method, path, status, username, ip, pid) VALUES (?,?,?,?,?,?,?)",
-                (
-                    _now_ts(),
-                    request.method,
-                    request.path,
-                    response.status_code,
-                    session.get("username"),
-                    request.remote_addr or "127.0.0.1",
-                    PID,
-                ),
-            )
-            db.commit()
-        except Exception:
-            pass
-        return response
-
+    
     return app
 
+    
 
 
 app = create_app()

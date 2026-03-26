@@ -16,7 +16,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-
 def require_role(*roles):
     from functools import wraps
     def decorator(f):
@@ -27,6 +26,20 @@ def require_role(*roles):
             if session.get("role") not in roles:
                 return render_template("403.html"), 403
             return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+def require_role_vuln(*roles):
+    from functools import wraps
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if (not request.cookies.get('func_vuln')):
+                if "user_id" not in session:
+                    return redirect(url_for("auth.login"))
+                if session.get("role") not in roles:
+                    return render_template("403.html"), 403
+                return f(*args, **kwargs)
         return decorated
     return decorator
 
@@ -106,5 +119,4 @@ def register():
 
 @auth_bp.route("/logout")
 def logout():
-    session.clear()
     return redirect(url_for("auth.login"))

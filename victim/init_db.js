@@ -36,17 +36,18 @@ if (!fs.existsSync('./retos.db')) {
     j++;
   }
   //---flag csrf-----------------------------
-  for (var i = 1; i < 6; i++) {
+  usersCSRF=["mrodriguez","lperez","agarcia"]
+  for (var i = 0; i < 3; i++) {
     flag = makeFlag(20)
     db.insert({
       id: i,
       flag: `Flisol{${flag}}`,
       category: "csrf",
       inhabited: false,
-      user: users[j]
+      user: usersCSRF[i]
     })
-    j++;
   }
+   
 
   //---funcions-----------------------------
 

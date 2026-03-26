@@ -74,40 +74,16 @@ def _seed_fake_logs(db):
 
     entries = [
         # arranque
-        (ts(180),     "GET",  "/feed",           200, None,          "127.0.0.1",     pid),
-        # mrodriguez
-        (ts(172),     "GET",  "/login",           200, None,          "192.168.1.42",  pid),
-        (ts(171, 50), "POST", "/login",           302, "mrodriguez",  "192.168.1.42",  pid),
-        (ts(171, 48), "GET",  "/my-posts",        200, "mrodriguez",  "192.168.1.42",  pid),
-        (ts(171, 20), "GET",  "/post/create",     200, "mrodriguez",  "192.168.1.42",  pid),
-        (ts(170, 55), "POST", "/post/create",     302, "mrodriguez",  "192.168.1.42",  pid),
-        (ts(170, 50), "GET",  "/my-posts",        200, "mrodriguez",  "192.168.1.42",  pid),
-        (ts(168),     "GET",  "/logout",          302, "mrodriguez",  "192.168.1.42",  pid),
-        # admin
-        (ts(155),     "GET",  "/login",           200, None,          "127.0.0.1",     pid),
-        (ts(154, 40), "POST", "/login",           302, "admin",       "127.0.0.1",     pid),
-        (ts(154, 38), "GET",  "/admin/",          200, "admin",       "127.0.0.1",     pid),
-        (ts(153),     "GET",  "/admin/users",     200, "admin",       "127.0.0.1",     pid),
-        (ts(150),     "GET",  "/admin/posts",     200, "admin",       "127.0.0.1",     pid),
-        (ts(148),     "GET",  "/logout",          302, "admin",       "127.0.0.1",     pid),
-        # lperez
-        (ts(120),     "GET",  "/login",           200, None,          "10.0.0.7",      pid),
-        (ts(119, 45), "POST", "/login",           302, "lperez",      "10.0.0.7",      pid),
-        (ts(119, 40), "GET",  "/my-posts",        200, "lperez",      "10.0.0.7",      pid),
-        (ts(119),     "GET",  "/post/create",     200, "lperez",      "10.0.0.7",      pid),
-        (ts(118, 30), "POST", "/post/create",     302, "lperez",      "10.0.0.7",      pid),
-        (ts(117),     "GET",  "/my-posts",        200, "lperez",      "10.0.0.7",      pid),
-        (ts(116, 10), "POST", "/post/toggle/2",   302, "lperez",      "10.0.0.7",      pid),
-        (ts(115),     "GET",  "/logout",          302, "lperez",      "10.0.0.7",      pid),
+        
         # agarcia — primer intento fallido
         (ts(90),      "GET",  "/login",           200, None,          "10.0.0.19",     pid),
         (ts(89, 50),  "POST", "/login",           302, None,          "10.0.0.19",     pid),
         (ts(89, 48),  "GET",  "/login",           200, None,          "10.0.0.19",     pid),
-        (ts(89, 20),  "POST", "/login",           302, "agarcia",     "10.0.0.19",     pid),
-        (ts(89, 18),  "GET",  "/my-posts",        200, "agarcia",     "10.0.0.19",     pid),
-        (ts(88, 30),  "GET",  "/post/create",     200, "agarcia",     "10.0.0.19",     pid),
-        (ts(88),      "POST", "/post/create",     302, "agarcia",     "10.0.0.19",     pid),
-        (ts(87),      "GET",  "/logout",          302, "agarcia",     "10.0.0.19",     pid),
+        (ts(89, 20),  "POST", "/login",           302, "mrodriguez",     "10.0.0.19",     pid),
+        (ts(89, 18),  "GET",  "/my-posts",        200, "mrodriguez",     "10.0.0.19",     pid),
+        (ts(88, 30),  "GET",  "/post/create",     200, "mrodriguez",     "10.0.0.19",     pid),
+        (ts(88),      "POST", "/post/create",     302, "mrodriguez",     "10.0.0.19",     pid),
+        (ts(87),      "GET",  "/logout",          302, "mrodriguez",     "10.0.0.19",     pid),
         # visitas anonimas al feed
         (ts(60),      "GET",  "/feed",            200, None,          "192.168.1.88",  pid),
         (ts(45),      "GET",  "/feed",            200, None,          "10.0.0.31",     pid),

@@ -6,7 +6,7 @@
 SECRET_KEY = "csrf_demo_insecure_key_2024"  # VULNERABLE: clave predecible
 
 # VULNERABLE: SameSite=None permite envío cross-origin de cookies
-SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_SAMESITE = None #'lax'
 
 # VULNERABLE: accesible desde JavaScript
 SESSION_COOKIE_HTTPONLY = False

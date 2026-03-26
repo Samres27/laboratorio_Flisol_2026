@@ -5,7 +5,8 @@ from flask import (
     redirect, url_for, session, flash, abort, make_response
 )
 from database import get_db
-from blueprints.auth import require_role
+from blueprints.auth import require_role, require_role_vuln
+import logging 
 
 posts_bp = Blueprint("posts", __name__)
 
@@ -67,8 +68,7 @@ def _check_static_csrf_token():
 
 def _check_referer():
     referer = request.headers.get("Referer", "")
-    print(referer)
-    if ("localhost:5000" not in referer):# or en el dominio del contenedor docker
+    if ("localhost" not in referer):# or en el dominio del contenedor docker
         abort(403)
     
 
@@ -152,6 +152,10 @@ def view_post(post_id):
         abort(403)
     return render_template("posts/detail.html", post=post)
 
+@posts_bp.before_request
+def log_cookies():
+    print(session)
+    print("Request cookies:", request.cookies)
 
 @posts_bp.route("/my-posts")
 @require_role("writer")
@@ -167,7 +171,7 @@ def my_posts():
 # ── VULNERABILIDAD 1: Token CSRF estático ───────────────────────
 
 @posts_bp.route("/post/create", methods=["GET", "POST"])
-@require_role("writer")
+@require_role_vuln("writer")
 def create_post():
     csrf_token = _get_static_csrf_token()
 
@@ -176,7 +180,8 @@ def create_post():
 
         title     = request.form.get("title", "").strip()
         body      = request.form.get("body", "").strip()
-        published = 1 if request.form.get("published") else 0
+        
+        published = 1 if int(request.form.get("published")) else 0
 
         if not title or not body:
             flash("Título y contenido son obligatorios.", "error")
@@ -199,10 +204,11 @@ def create_post():
 @posts_bp.route("/post/delete/<int:post_id>", methods=["GET", "POST"])
 @require_role("writer")
 def delete_post(post_id):
+    print("llamada al post 1")
     
     cookie_token = request.cookies.get("delete_token", "")
     if not cookie_token:
-        flash("Token de eliminación ausente.", "error")
+        print("Token de eliminación ausente.", "error")
         return redirect(url_for("posts.my_posts"))
 
     db = get_db()
@@ -210,18 +216,20 @@ def delete_post(post_id):
         "SELECT token FROM delete_tokens WHERE user_id=?",
         (session["user_id"],)
     ).fetchone()
+    logging.info("cookie_token: %s", cookie_token)
+    logging.info("db_token:     %s", row["token"] if row else "NO EXISTE")
     if not row or cookie_token != row["token"]:
-        flash("Token de eliminación inválido.", "error")
+        print("Token de eliminación inválido.", "error")
         return redirect(url_for("posts.my_posts"))
 
-
+    print("llamada al post 2")
     post = db.execute("SELECT author_id FROM posts WHERE id=?", (post_id,)).fetchone()
     if not post or post["author_id"] != session["user_id"]:
         abort(403)
 
     db.execute("DELETE FROM posts WHERE id=?", (post_id,))
     db.commit()
-    flash("Post eliminado.", "success")
+    print("Post eliminado.", "success")
 
     response = make_response(redirect(url_for("posts.my_posts")))
     _set_delete_cookie(response)

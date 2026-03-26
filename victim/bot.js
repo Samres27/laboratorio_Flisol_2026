@@ -32,7 +32,7 @@ async function visit(page, url) {
     try {
         const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 10000 });
         const status = response ? response.status() : null;
-        console.log(`[victim] ${url} → ${status}`);
+        // console.log(`[victim] ${url} → ${status}`); //funcion muy pesada
 
         if (status === 200) {
             await page.waitForTimeout(5000);
@@ -78,7 +78,7 @@ async function main() {
             }
 
             await browser.close();
-            console.log(`[victim] Cycle done. Waiting ${VISIT_INTERVAL}ms...`);
+            //console.log(`[victim] Cycle done. Waiting ${VISIT_INTERVAL}ms ...`); //se llena muy rapido
 
         } catch (e) {
             console.log(`[victim] Cycle error: ${e.message}`);
