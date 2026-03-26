@@ -3,12 +3,12 @@
 
 {% block content %}
 <div class="page-header">
-  <h1>Gestión de escritores</h1>
-  <p>// {{ writers|length }} escritores registrados</p>
+  <h1>Writer Management</h1>
+  <p>// {{ writers|length }} registered writers</p>
 </div>
 
 <div class="vuln-banner">
-  Formularios POST sin token CSRF — vectores: /admin/ban-user · /admin/unban-user · /admin/delete-user
+ POST forms without CSRF token — vectors: /admin/ban-user · /admin/unban-user · /admin/delete-user
 </div>
 
 {% if writers %}
@@ -17,10 +17,10 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>Usuario</th>
-        <th>Estado</th>
-        <th>Registrado</th>
-        <th>Acciones</th>
+        <th>User</th>
+        <th>State</th>
+        <th>Registered</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -30,9 +30,9 @@
         <td style="font-family:var(--mono)">{{ w.username }}</td>
         <td>
           {% if w.banned %}
-            <span class="badge badge-banned">suspendido</span>
+            <span class="badge badge-banned">suspended</span>
           {% else %}
-            <span class="badge badge-active">activo</span>
+            <span class="badge badge-active">asset</span>
           {% endif %}
         </td>
         <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">{{ w.created_at[:10] }}</td>
@@ -43,13 +43,13 @@
             <!-- VULNERABLE: POST sin token CSRF -->
             <form method="POST" action="{{ url_for('admin.unban_user') }}" style="display:inline">
               <input type="hidden" name="user_id" value="{{ w.id }}">
-              <button type="submit" class="btn btn-success btn-sm">Reactivar</button>
+              <button type="submit" class="btn btn-success btn-sm">Reactivate</button>
             </form>
             {% else %}
             <!-- VULNERABLE: POST sin token CSRF -->
             <form method="POST" action="{{ url_for('admin.ban_user') }}" style="display:inline">
               <input type="hidden" name="user_id" value="{{ w.id }}">
-              <button type="submit" class="btn btn-warning btn-sm">Suspender</button>
+              <button type="submit" class="btn btn-warning btn-sm">Suspend</button>
             </form>
             {% endif %}
 
@@ -57,7 +57,7 @@
             <form method="POST" action="{{ url_for('admin.delete_user') }}" style="display:inline"
                   onsubmit="return confirm('¿Eliminar a {{ w.username }}? Esta acción no se puede deshacer.')">
               <input type="hidden" name="user_id" value="{{ w.id }}">
-              <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+              <button type="submit" class="btn btn-danger btn-sm">Remove</button>
             </form>
 
           </div>
@@ -68,10 +68,10 @@
   </table>
 </div>
 {% else %}
-<div class="empty"><strong>Sin escritores</strong>No hay escritores registrados aún.</div>
+<div class="empty"><strong>Without writers</strong>There are no registered writers yet.</div>
 {% endif %}
 
 <div class="mt-24">
-  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost">← Volver al dashboard</a>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost">← Return to dashboard</a>
 </div>
 {% endblock %}

@@ -5,26 +5,26 @@
 <div class="auth-wrap">
   <div class="auth-logo">
     <h1>BlogCSRF</h1>
-    <p>Crear cuenta de escritor</p>
+    <p>Create a writer account</p>
   </div>
 
   <div class="card">
     <!-- VULNERABLE: sin token CSRF -->
     <form method="POST">
       <div class="form-group">
-        <label>Nombre de usuario</label>
-        <input type="text" name="username" required autocomplete="off" placeholder="escritor_01">
+        <label>User name</label>
+        <input type="text" name="username" required autocomplete="off" placeholder="writer_01">
       </div>
       <div class="form-group">
-        <label>Contraseña</label>
+        <label>Password</label>
         <input type="password" name="password" required placeholder="mínimo 4 caracteres">
       </div>
-      <button type="submit" class="btn btn-primary" style="width:100%">Crear cuenta</button>
+      <button type="submit" class="btn btn-primary" style="width:100%">Create account</button>
     </form>
   </div>
 
   <p class="text-muted mt-24" style="text-align:center">
-    ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}" style="color:var(--accent)">Inicia sesión</a>
+    Do you already have an account? <a href="{{ url_for('auth.login') }}" style="color:var(--accent)">Log in</a>
   </p>
 </div>
 {% endblock %}

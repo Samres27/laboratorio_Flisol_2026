@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Mis posts — BlogCSRF{% endblock %}
+{% block title %}My posts — BlogCSRF{% endblock %}
 
 {% block content %}
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end">
   <div>
-    <h1>Mis posts</h1>
-    <p>// {{ posts|length }} posts · escritor: {{ session.username }}</p>
+    <h1>My posts</h1>
+    <p>// {{ posts|length }} posts · writer: {{ session.username }}</p>
   </div>
-  <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary">+ Nuevo post</a>
+  <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary">+ New post</a>
 </div>
 <meta name="referrer" content="same-origin">
 
@@ -19,32 +19,31 @@
     <div class="flex justify-between align-center" style="margin-bottom:8px">
       <h2 style="margin-bottom:0"><a href="{{ url_for('posts.view_post', post_id=p.id) }}">{{ p.title }}</a></h2>
       {% if p.published %}
-        <span class="badge badge-pub">publicado</span>
+        <span class="badge badge-pub">published</span>
       {% else %}
-        <span class="badge badge-draft">borrador</span>
+        <span class="badge badge-draft">draft</span>
       {% endif %}
     </div>
     <div class="post-meta">
-      <span>Creado: {{ p.created_at[:10] }}</span>
+      <span>created: {{ p.created_at[:10] }}</span>
       {% if p.updated_at != p.created_at %}
         <span>Editado: {{ p.updated_at[:10] }}</span>
       {% endif %}
     </div>
     <div class="post-excerpt">{{ p.body[:160] }}{% if p.body|length > 160 %}…{% endif %}</div>
     <div class="post-actions">
-      <a href="{{ url_for('posts.edit_post', post_id=p.id) }}" class="btn btn-ghost btn-sm">Editar</a>
+      <a href="{{ url_for('posts.edit_post', post_id=p.id) }}" class="btn btn-ghost btn-sm">edit</a>
 
-      <!-- VULNERABLE: POST sin token CSRF -->
+      
       <form method="POST" action="{{ url_for('posts.toggle_publish', post_id=p.id) }}" style="display:inline">
         <button type="submit" class="btn btn-sm {% if p.published %}btn-warning{% else %}btn-success{% endif %}">
-          {% if p.published %}Despublicar{% else %}Publicar{% endif %}
+          {% if p.published %}Unpublish{% else %}publish{% endif %}
         </button>
       </form>
 
-      <!-- VULNERABLE: POST sin token CSRF -->
       <form method="POST" action="{{ url_for('posts.delete_post', post_id=p.id) }}" style="display:inline"
-            onsubmit="return confirm('¿Eliminar este post?')">
-        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+            onsubmit="return confirm('Delete this post?')">
+        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
       </form>
     </div>
   </div>
@@ -52,8 +51,8 @@
 </div>
 {% else %}
 <div class="empty">
-  <strong>Sin posts</strong>
-  <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary" style="margin-top:16px">Crear primer post</a>
+  <strong>No posts</strong>
+  <a href="{{ url_for('posts.create_post') }}" class="btn btn-primary" style="margin-top:16px">Create first post</a>
 </div>
 {% endif %}
 {% endblock %}

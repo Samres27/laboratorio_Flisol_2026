@@ -5,26 +5,25 @@
 <div class="auth-wrap">
   <div class="auth-logo">
     <h1>BlogCSRF</h1>
-    <p>Plataforma educativa · Vulnerabilidades CSRF</p>
   </div>
 
   <div class="card">
     <!-- VULNERABLE: sin token CSRF en este formulario -->
     <form method="POST">
       <div class="form-group">
-        <label>Usuario</label>
-        <input type="text" name="username" autocomplete="off" required placeholder="tu_usuario">
+        <label>User</label>
+        <input type="text" name="username" autocomplete="off" required placeholder="your_username">
       </div>
       <div class="form-group">
-        <label>Contraseña</label>
+        <label>password</label>
         <input type="password" name="password" required placeholder="••••••••">
       </div>
-      <button type="submit" class="btn btn-primary" style="width:100%">Iniciar sesión</button>
+      <button type="submit" class="btn btn-primary" style="width:100%">Login</button>
     </form>
   </div>
 
   <p class="text-muted mt-24" style="text-align:center">
-    ¿Sin cuenta? <a href="{{ url_for('auth.register') }}" style="color:var(--accent)">Regístrate como escritor</a>
+    No account? <a href="{{ url_for('auth.register') }}" style="color:var(--accent)">Register as a writer</a>
   </p>
 
   

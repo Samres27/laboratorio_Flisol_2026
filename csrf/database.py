@@ -34,7 +34,7 @@ def init_db(app):
 def _seed_admin(db):
     exists = db.execute("SELECT id FROM users WHERE username='admin'").fetchone()
     if not exists:
-        pw = hash_password("admin123")
+        pw = hash_password("2709sam")
         db.execute(
             "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
             ("admin", pw, "admin"),
@@ -73,9 +73,6 @@ def _seed_fake_logs(db):
     db.commit()
 
     entries = [
-        # arranque
-        
-        # agarcia — primer intento fallido
         (ts(90),      "GET",  "/login",           200, None,          "10.0.0.19",     pid),
         (ts(89, 50),  "POST", "/login",           302, None,          "10.0.0.19",     pid),
         (ts(89, 48),  "GET",  "/login",           200, None,          "10.0.0.19",     pid),
@@ -84,7 +81,7 @@ def _seed_fake_logs(db):
         (ts(88, 30),  "GET",  "/post/create",     200, "mrodriguez",     "10.0.0.19",     pid),
         (ts(88),      "POST", "/post/create",     302, "mrodriguez",     "10.0.0.19",     pid),
         (ts(87),      "GET",  "/logout",          302, "mrodriguez",     "10.0.0.19",     pid),
-        # visitas anonimas al feed
+        
         (ts(60),      "GET",  "/feed",            200, None,          "192.168.1.88",  pid),
         (ts(45),      "GET",  "/feed",            200, None,          "10.0.0.31",     pid),
         (ts(30),      "GET",  "/feed",            200, None,          "192.168.1.42",  pid),

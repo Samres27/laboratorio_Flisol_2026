@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="page-header">
-  <h1>Todos los posts</h1>
-  <p>// {{ posts|length }} posts en total</p>
+  <h1>All posts</h1>
+  <p>// {{ posts|length }} total posts</p>
 </div>
 
 {% if posts %}
@@ -13,10 +13,10 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>Título</th>
-        <th>Autor</th>
-        <th>Estado</th>
-        <th>Fecha</th>
+        <th>Title</th>
+        <th>Author</th>
+        <th>State</th>
+        <th>Date</th>
         <th></th>
       </tr>
     </thead>
@@ -28,9 +28,9 @@
         <td style="font-family:var(--mono);font-size:12px">{{ p.username }}</td>
         <td>
           {% if p.published %}
-            <span class="badge badge-pub">publicado</span>
+            <span class="badge badge-pub">published</span>
           {% else %}
-            <span class="badge badge-draft">borrador</span>
+            <span class="badge badge-draft">draft</span>
           {% endif %}
         </td>
         <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">{{ p.created_at[:10] }}</td>

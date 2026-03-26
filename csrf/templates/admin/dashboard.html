@@ -3,27 +3,24 @@
 
 {% block content %}
 <div class="page-header">
-  <h1>Panel de administración</h1>
-  <p>// Sesión activa: {{ session.username }} · rol: admin</p>
+  <h1>Administration Panel</h1>
+  <p>// Sesión activa: {{ session.username }} • role: admin</p>
 </div>
 
-<div class="vuln-banner">
-  Las acciones de gestión (banear, eliminar) son vulnerables a CSRF — sin tokens de protección
-</div>
 
 <div class="stats">
   <div class="stat-card">
     <div class="num">{{ total_users }}</div>
-    <div class="label">Escritores registrados</div>
+    <div class="label">Registered writers</div>
   </div>
   <div class="stat-card">
     <div class="num">{{ total_posts }}</div>
-    <div class="label">Posts totales</div>
+    <div class="label">Total posts</div>
   </div>
 </div>
 
 <div class="page-header" style="margin-top:0">
-  <h1 style="font-size:22px">Actividad reciente</h1>
+  <h1 style="font-size:22px">Recent activity</h1>
 </div>
 
 {% if recent_posts %}
@@ -31,10 +28,10 @@
   <table>
     <thead>
       <tr>
-        <th>Título</th>
-        <th>Autor</th>
-        <th>Estado</th>
-        <th>Fecha</th>
+        <th>Title</th>
+        <th>Author</th>
+        <th>State</th>
+        <th>Date</th>
       </tr>
     </thead>
     <tbody>
@@ -44,9 +41,9 @@
         <td style="font-family:var(--mono);font-size:12px">{{ p.username }}</td>
         <td>
           {% if p.published %}
-            <span class="badge badge-pub">publicado</span>
+            <span class="badge badge-pub">published</span>
           {% else %}
-            <span class="badge badge-draft">borrador</span>
+            <span class="badge badge-draft">draft</span>
           {% endif %}
         </td>
         <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">{{ p.created_at[:10] }}</td>
@@ -56,11 +53,11 @@
   </table>
 </div>
 {% else %}
-<div class="empty"><strong>Sin actividad</strong>No hay posts aún.</div>
+<div class="empty"><strong>No activity</strong>There are no posts yet.</div>
 {% endif %}
 
 <div class="mt-24 flex gap-8">
-  <a href="{{ url_for('admin.users') }}" class="btn btn-ghost">Gestionar usuarios →</a>
-  <a href="{{ url_for('admin.all_posts') }}" class="btn btn-ghost">Ver todos los posts →</a>
+  <a href="{{ url_for('admin.users') }}" class="btn btn-ghost">Manage users →</a>
+  <a href="{{ url_for('admin.all_posts') }}" class="btn btn-ghost">View all posts →</a>
 </div>
 {% endblock %}

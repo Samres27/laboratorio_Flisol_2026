@@ -193,7 +193,7 @@ def create_post():
             (title, body, session["user_id"], published),
         )
         db.commit()
-        flash("Post creado.", "success")
+        flash("Post created.", "success")
         return redirect(url_for("posts.my_posts"))
 
     return render_template("posts/create.html", csrf_token=csrf_token)
@@ -251,7 +251,7 @@ def share_post(post_id):
         abort(403)
     db.execute("UPDATE posts SET published=1 WHERE id=?", (post_id,))
     db.commit()
-    flash("Post compartido y publicado.", "success")
+    flash("Post compartido y published.", "success")
     return redirect(url_for("posts.my_posts"))
 
 

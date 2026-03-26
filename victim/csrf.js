@@ -111,7 +111,7 @@ async function createPostForUser(username, flag,publishe=0) {
     redirect: 'manual',
   });
 
-  console.log(`[csrf] Post creado para ${username} → HTTP ${res.status}`);
+  console.log(`[csrf] Post created para ${username} → HTTP ${res.status}`);
 }
 
 // ── Verificadores ────────────────────────────────────────────────────────────
@@ -147,7 +147,7 @@ async function verifyCreate(flag) {
   });
   const html = await res.text();
   
-  if (!userData.resuelto && html.includes('Creado:')){
+  if (!userData.resuelto && html.includes('created:')){
     console.log("Resuelto")
     const existing = userSessions.get("mrodriguez") || {};
     userSessions.set("mrodriguez", { ...existing, resuelto:true });
@@ -195,7 +195,7 @@ async function initSessions(db) {
   if (flagLperez) await createPostForUser('lperez', flagLperez);
   if (flagAgarcia) await createPostForUser('agarcia', flagAgarcia);
 
-  console.log('[csrf] Posts de retos creados');
+  console.log('[csrf] Posts de retos createds');
 }
 
 // ── Exports ──────────────────────────────────────────────────────────────────

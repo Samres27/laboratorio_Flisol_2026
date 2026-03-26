@@ -261,17 +261,17 @@
     <div class="nav-links">
       {% if session.role == 'admin' %}
         <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('admin.users') }}">Usuarios</a>
+        <a href="{{ url_for('admin.users') }}">Users</a>
         <a href="{{ url_for('admin.all_posts') }}">Posts</a>
         <a href="{{ url_for('posts.public_feed') }}">Feed</a>
         <span class="nav-badge admin">admin</span>
       {% else %}
         <a href="{{ url_for('posts.public_feed') }}">Feed</a>
-        <a href="{{ url_for('posts.my_posts') }}">Mis posts</a>
-        <a href="{{ url_for('posts.create_post') }}">+ Nuevo</a>
+        <a href="{{ url_for('posts.my_posts') }}">My posts</a>
+        <a href="{{ url_for('posts.create_post') }}">+ New</a>
         <span class="nav-badge writer">{{ session.username }}</span>
       {% endif %}
-      <a href="{{ url_for('auth.logout') }}">Salir</a>
+      <a href="{{ url_for('auth.logout') }}">Exit</a>
     </div>
   </div>
 </nav>
@@ -290,7 +290,7 @@
 <main>{% block content %}{% endblock %}</main>
 
 <footer>
-  BlogCSRF — Entorno educativo de ciberseguridad 
+  BlogCSRF 
 </footer>
 </body>
 </html>

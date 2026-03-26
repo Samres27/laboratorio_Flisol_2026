@@ -1,16 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Editar post — BlogCSRF{% endblock %}
+{% block title %}edit post — BlogCSRF{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <h1>Editar post</h1>
+  <h1>edit post</h1>
   <p>// ID: {{ post.id }}</p>
 </div>
 
 
 
 <div class="card" style="max-width:720px">
-  <!-- VULNERABLE: sin token CSRF, sin check de autor -->
   <form method="POST">
     <div class="form-group">
       <label>Título</label>
@@ -23,7 +22,7 @@
     <div class="form-group">
       <div class="check-row">
         <input type="checkbox" id="published" name="published" {% if post.published %}checked{% endif %}>
-        <label for="published" style="margin-bottom:0;text-transform:none;letter-spacing:0;font-size:14px">Publicado</label>
+        <label for="published" style="margin-bottom:0;text-transform:none;letter-spacing:0;font-size:14px">published</label>
       </div>
     </div>
     <div class="flex gap-8">

@@ -9,7 +9,7 @@
 
   {% if not post.published %}
   <div class="vuln-banner" style="margin-top:16px">
-    Post en modo borrador — solo visible para su autor
+    Draft post — visible only to its author
   </div>
   {% endif %}
 
@@ -17,9 +17,9 @@
   <div class="article-meta">
     por <strong>{{ post.username }}</strong> &nbsp;·&nbsp; {{ post.created_at[:10] }}
     {% if post.published %}
-      &nbsp;·&nbsp; <span class="badge badge-pub">publicado</span>
+      &nbsp;·&nbsp; <span class="badge badge-pub">published</span>
     {% else %}
-      &nbsp;·&nbsp; <span class="badge badge-draft">borrador</span>
+      &nbsp;·&nbsp; <span class="badge badge-draft">draft</span>
     {% endif %}
   </div>
 
@@ -38,8 +38,8 @@
 
   {% if session.role == 'writer' %}
   <div class="mt-24 flex gap-8">
-    <a href="{{ url_for('posts.edit_post', post_id=post.id) }}" class="btn btn-ghost btn-sm">Editar</a>
-    <!-- VULNERABLE: POST sin token CSRF -->
+    <a href="{{ url_for('posts.edit_post', post_id=post.id) }}" class="btn btn-ghost btn-sm">edit</a>
+    
     <form method="POST" action="{{ url_for('posts.delete_post', post_id=post.id) }}"
           onsubmit="return confirm('¿Eliminar este post?')">
       <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
