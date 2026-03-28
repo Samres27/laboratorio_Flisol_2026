@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}SoundNest — Music for Everyone{% endblock %}
+{% block content %}
+<style>
+  .hero { text-align: center; padding: 3rem 0 2.5rem; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.1; margin-bottom: 1rem; }
+  .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 2rem; }
+  .hero-cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  .section-title { font-size: 1.1rem; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 1.5rem; font-family: 'Space Mono', monospace; }
+
+  .songs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.2rem; }
+  .song-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.2rem; transition: border-color .2s, transform .2s;
+    display: flex; flex-direction: column; gap: .8rem;
+  }
+  .song-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .song-header { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; }
+  .song-info h3 { font-size: 1rem; font-weight: 700; }
+  .song-info span { font-size: .82rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .song-badge {
+    font-size: .7rem; padding: .2rem .6rem; border-radius: 99px;
+    background: rgba(124,58,237,.2); color: #a78bfa;
+    font-family: 'Space Mono', monospace; white-space: nowrap;
+  }
+  audio { width: 100%; height: 36px; border-radius: 6px; accent-color: var(--accent); }
+  .song-meta { font-size: .78rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .empty { text-align: center; padding: 4rem 0; color: var(--muted); }
+  .empty p { margin-bottom: 1.5rem; font-size: 1rem; }
+</style>
+
+<div class="hero">
+  <h1>Share your <span>music</span><br>with the world</h1>
+  <p>Upload your creations, discover new artists, and listen without limits.</p>
+  <div class="hero-cta">
+    {% if session.user_id %}
+      <a href="{{ url_for('upload') }}" class="btn btn-primary">↑ Upload a Song</a>
+    {% else %}
+      <a href="{{ url_for('register') }}" class="btn btn-primary">Create a Free Account</a>
+      <a href="{{ url_for('login') }}" class="btn btn-ghost">Sign In</a>
+    {% endif %}
+  </div>
+</div>
+
+<p class="section-title">🎵 Recent Tracks</p>
+
+{% if songs %}
+  <div class="songs-grid">
+    {% for song in songs %}
+    <div class="song-card">
+      <div class="song-header">
+        <div class="song-info">
+          <h3>{{ song.title }}</h3>
+          <span>{{ song.artist }}</span>
+        </div>
+        <span class="song-badge">{{ song.filename.rsplit('.',1)[1].upper() }}</span>
+        {% if song.is_private %}
+          <span class="song-badge" style="background:rgba(6,214,160,.15);color:var(--accent2);">Private</span>
+        {% endif %}
+      </div>
+      <audio controls src="{{ url_for('static', filename='uploads/' + song.filename) }}"></audio>
+      <div class="song-meta">by @{{ song.username }} · {{ song.uploaded_at[:10] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty">
+    <p>No songs yet. Be the first to upload!</p>
+    <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+  </div>
+{% endif %}
+{% endblock %}

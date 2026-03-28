@@ -11,13 +11,9 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app
 
-COPY package.json .
-COPY views ./views
-COPY server.js .
-COPY bot.js .
-COPY init_db.js .
 COPY . .
 RUN npm install
+
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Upload a Song — SoundNest{% endblock %}
+{% block content %}
+<style>
+  .upload-wrap { max-width: 500px; margin: 3rem auto; }
+  .upload-wrap h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: .4rem; }
+  .upload-wrap > p { color: var(--muted); margin-bottom: 2rem; font-size: .95rem; }
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 10px;
+    padding: 2rem; text-align: center; cursor: pointer;
+    transition: border-color .2s, background .2s;
+    color: var(--muted); font-family: 'Space Mono', monospace; font-size: .85rem;
+  }
+  .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: rgba(124,58,237,.06); }
+  .drop-icon { font-size: 2.5rem; display: block; margin-bottom: .5rem; }
+  #file-name { margin-top: .5rem; color: var(--accent2); font-size: .8rem; }
+</style>
+<div class="upload-wrap">
+  <h1>Upload a Song</h1>
+  <p>Share your music in MP3, WAV, OGG or FLAC format (max 32 MB).</p>
+  <div class="card">
+    <form method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Song Title</label>
+        <input type="text" name="title" placeholder="My Awesome Track" required>
+      </div>
+      <div class="form-group">
+        <label>Artist Name</label>
+        <input type="text" name="artist" placeholder="DJ Example" required>
+      </div>
+      <div class="form-group">
+        <label>Audio File</label>
+        <div class="drop-zone" onclick="document.getElementById('audio-input').click()">
+          <span class="drop-icon">🎵</span>
+          Click or drag your file here
+          <div id="file-name">No file selected</div>
+        </div>
+        <input type="file" name="audio" id="audio-input" accept=".mp3,.wav,.ogg,.flac" required style="display:none">
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem;">
+        <input type="checkbox" name="is_private" id="is_private"
+               style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+        <label for="is_private" style="margin:0;cursor:pointer;font-size:.9rem;">
+           Private — visible only to me
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:.75rem;">
+        ↑ Upload Song
+      </button>
+    </form>
+  </div>
+</div>
+<script>
+  const input = document.getElementById('audio-input');
+  const nameEl = document.getElementById('file-name');
+  const zone   = document.querySelector('.drop-zone');
+  input.addEventListener('change', () => {
+    nameEl.textContent = input.files[0]?.name || 'No file selected';
+  });
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('over');
+    input.files = e.dataTransfer.files;
+    nameEl.textContent = input.files[0]?.name || '';
+  });
+</script>
+{% endblock %}

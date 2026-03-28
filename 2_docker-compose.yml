@@ -34,23 +34,23 @@ services:
   #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
   #       max-file: "3"  # Maximum number of log files to keep
 
-  csrf:
-    build:
-      context: .
-      dockerfile: ./csrf/dockerfile
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-    ports:
-      - "127.0.0.1:81:80"
-    networks:
-      - lab_net
+  # csrf:
+  #   build:
+  #     context: .
+  #     dockerfile: ./csrf/dockerfile
+  #   restart: unless-stopped
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #   ports:
+  #     - "127.0.0.1:81:80"
+  #   networks:
+  #     - lab_net
 
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-        max-file: "3"  # Maximum number of log files to keep
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+  #       max-file: "3"  # Maximum number of log files to keep
   clickjacking:
     build:
       context: clickjacking
@@ -59,7 +59,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     ports:
-      - "127.0.0.1:82:443"
+      - "127.0.0.1:82:80"
     networks:
       - lab_net
 
@@ -68,28 +68,28 @@ services:
       options:
         max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
         max-file: "3"  # Maximum number of log files to keep
-  victim:
-    build:
-      context: ./victim
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      - TARGET_URL=http://xss
-      - VISIT_INTERVAL=1
-    volumes:
-      - ./victim/:/app/
-    ports:
-      - "127.0.0.1:2780:8080"
-    depends_on:
-      # - xss
-       - csrf
-    networks:
-      - lab_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-        max-file: "3"  # Maximum number of log files to keep
+  # victim:
+  #   build:
+  #     context: ./victim
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   environment:
+  #     - TARGET_URL=http://xss
+  #     - VISIT_INTERVAL=1
+  #   volumes:
+  #     - ./victim/:/app/
+  #   ports:
+  #     - "127.0.0.1:2780:8080"
+  #   depends_on:
+  #     # - xss
+  #     - csrf
+  #   networks:
+  #     - lab_net
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+  #       max-file: "3"  # Maximum number of log files to keep
   mailserver:
     image: ghcr.io/docker-mailserver/docker-mailserver:latest
     container_name: mailserver

@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const puppeteer = require('puppeteer');
+const { setupVictim, verifyReto1, verifyReto2 } = require('./clickjacking_setup');
 const app = express();
 const port = 8080;
 
@@ -42,6 +43,14 @@ app.get('/csrf', (req, res) => {
   });
 });
 
+app.get('/clickjacking', (req, res) => {
+  db.find({ category: "clickjacking" }, function (err, docs) {
+    res.render('challenges', {
+      challenges: docs.sort((a, b) => a.id - b.id),
+      title: "clickjacking"
+    });
+  });
+});
 // ── Check flag ────────────────────────────────────────────────────────────────
 
 let tmpPath = null;
@@ -269,163 +278,108 @@ async function visit(site, flag, sessionData = null, TARGET_URL) {
     return null;
   }
 }
-// async function visit(site, flag, sessionData = null, TARGET_URL) {
-//   const blockedListRutes = await new Promise((resolve) => {
-//     rutas.find({}, (err, docs) => {
-//       resolve(docs.map(d => d.path).filter(Boolean));
-//     });
-//   });
+async function visitClickjacking(site, flag, sessionData = null, TARGET_URL) {
+  try {
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      ignoreHTTPSErrors: true,  // ← cert autofirmado
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure'
+      ]
+    });
 
-//   let captureRoute = null;
-//   console.log(`[victim] Rutas bloqueadas: ${blockedListRutes}`);
+    const page = await browser.newPage();
 
-//   try {
-//     const browser = await puppeteer.launch({
-//       headless: 'new',
-//       args: ['--no-sandbox', '--disable-setuid-sandbox',
-//         '--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure']
-//     });
-//     const page = await browser.newPage();
+    // ── Sesión: misma lógica que tu visit() ──────────────────────
+    const username    = sessionData?.username;
+    const savedSession = username ? userSessions.get(username) : null;
+    const sessionValue = savedSession?.session ?? sessionData?.session ?? null;
 
-//     // ── Login con credenciales si es CSRF ─────────────────────────
-//     if (sessionData?.username && sessionData?.password) {
-//       await page.goto(`${TARGET_URL}/login`, { waitUntil: 'networkidle2', timeout: 10000 });
-//       console.log(`[victim] Login page URL: ${page.url()}`);
+    if (sessionValue) {
+      console.log(`[clickjacking] Seteando sesión para ${username}`);
 
-//       await page.type('input[name="username"]', sessionData.username);
-//       await page.type('input[name="password"]', sessionData.password);
+      // SameSite=None requiere secure=true obligatoriamente
+      const domains = ['127.0.0.1', 'localhost'];
+      for (const domain of domains) {
+        await page.setCookie({
+          name:     'session',
+          value:    sessionValue,
+          domain,
+          path:     '/',
+          secure:   true,   // ← requerido por SameSite=None
+          sameSite: 'None', // ← debe coincidir con tu Flask
+          httpOnly: true,
+        });
+        await page.setCookie({
+          name:     'flagFlisol',
+          value:    flag,
+          domain,
+          path:     '/',
+          secure:   true,
+          sameSite: 'None',
+        });
+      }
+    } else if (sessionData?.username && sessionData?.password) {
+      // Sin sesión guardada — hacer login primero en https
+      console.log(`[clickjacking] Sin sesión, haciendo login en ${TARGET_URL}`);
 
-//       await Promise.all([
-//         page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }),
-//         page.click('button[type="submit"]'),
-//       ]);
-//       console.log(`[victim] Post-login URL: ${page.url()}`);
+      await page.goto(`${TARGET_URL}/login`, {
+        waitUntil: 'networkidle2',
+        timeout: 10000
+      });
 
-//       // Obtener cookies después del login
-//       // Después del login, obtener cookies
-//       const cookiesPostLogin = await page.cookies();
-//       const sessionCookie = cookiesPostLogin.find(c => c.name === 'session');
+      await page.type('input[name="username"]', sessionData.username);
+      await page.type('input[name="password"]', sessionData.password);
 
-//       // Dominios válidos (solo hostname, sin puerto)
-//       const domains = ['xss', 'csrf', 'flask', 'localhost', '127.0.0.1'];
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }),
+        page.click('button[type="submit"]'),
+      ]);
 
-//       if (sessionCookie) {
-//         for (const domain of domains) {
-//           await page.setCookie({
-//             name: sessionCookie.name,
-//             value: sessionCookie.value,
-//             domain: domain,
-//             path: '/',
-//             httpOnly: sessionCookie.httpOnly,
-//             secure: false,               // porque estamos en HTTP
-//             sameSite: 'Lax'              // debe coincidir con la configuración del servidor
-//           });
-//         }
-//       }
+      // Persistir sesión igual que tu visit()
+      const cookiesPostLogin = await page.cookies();
+      const sessionCookie    = cookiesPostLogin.find(c => c.name === 'session');
 
-//       // Establecer flagFlisol y func_vuln con los mismos atributos
-//       for (const domain of domains) {
-//         await page.setCookie({
-//           name: 'flagFlisol',
-//           value: flag,
-//           domain,
-//           path: '/',
-//           secure: false,
-//           sameSite: 'Lax'
-//         });
-//         await page.setCookie({
-//           name: 'func_vuln',
-//           value: '1',
-//           domain,
-//           path: '/',
-//           secure: false,
-//           sameSite: 'Lax'
-//         });
-//       }
-//       // 3. (Opcional) Agregar también el dominio del exploit si es necesario
-//       const extraDomains = ['10.1.1.19:2709'];
-//       for (const domain of extraDomains) {
-//         if (sessionCookie) {
-//           await page.setCookie({
-//             name: sessionCookie.name,
-//             value: sessionCookie.value,
-//             domain: domain,
-//             path: '/',
-//             httpOnly: sessionCookie.httpOnly,
-//             secure: sessionCookie.secure,
-//             sameSite: sessionCookie.sameSite
-//           });
-//         }
-//         await page.setCookie({ name: 'flagFlisol', value: flag, domain, path: '/' });
-//         await page.setCookie({ name: 'func_vuln', value: '1', domain, path: '/' });
-//       }
+      if (sessionCookie) {
+        const existing = userSessions.get(username) || {};
+        userSessions.set(username, { ...existing, session: sessionCookie.value });
+        console.log(`[clickjacking] Sesión persistida para ${username}`);
+      }
+    }
 
-//       // Verificar todas las cookies actuales (debug)
-//       const allCookies = await page.cookies();
-//       console.log(`[victim] Todas las cookies después de la configuración: ${allCookies.map(c => `${c.name}=${c.value.substring(0, 10)}... (dominio=${c.domain})`).join('; ')}`);
-//     }
+    // ── Navegar al sitio PoC de clickjacking ────────────────────
+    console.log(`[clickjacking] Navegando a ${site}`);
+    const response = await page.goto(site, {
+      waitUntil: 'networkidle2',
+      timeout: 10000
+    });
+    console.log(`[clickjacking] ${site} → ${response?.status()}`);
 
-//     const cookiesForCsrf = await page.cookies('http://csrf');
-//     console.log('Cookies para http://csrf:', cookiesForCsrf.map(c => `${c.name}=${c.value}`));
-//     // ── Interceptar peticiones ────────────────────────────────────
-//     await page.setRequestInterception(true);
-//     page.on('request', (req) => {
-//       let rawUrl = req.url()
-//         .replace('localhost:81', 'csrf')
-//         .replace('127.0.0.1:81', 'csrf')
-//         .replace('localhost', 'xss')
-//         .replace('127.0.0.1', 'xss');
+    // ── Esperar que el iframe cargue ─────────────────────────────
+    await new Promise(r => setTimeout(r, 2000));
 
-//       if (!rawUrl.includes('xss') && !rawUrl.includes('csrf')) {
-//         req.continue();
-//         return;
-//       }
+    // ── Clic por coordenadas físicas (emula clickjacking real) ───
+    await page.waitForSelector('#decoy_website a', { timeout: 5000 });
+    const decoyBtn = await page.$('#decoy_website a');
+    const box      = await decoyBtn.boundingBox();
 
-//       const parsed = new URL(rawUrl);
-//       const rutaCompleta = parsed.origin + parsed.pathname;
+    if (box) {
+      console.log(`[clickjacking] Clicando en (${box.x + box.width/2}, ${box.y + box.height/2})`);
+      await page.mouse.click(
+        box.x + box.width  / 2,
+        box.y + box.height / 2
+      );
+    } else {
+      console.log(`[clickjacking] No se encontró boundingBox del botón decoy`);
+    }
 
-//       if (!captureRoute) {
-//         captureRoute = rutaCompleta;
-//         console.log(`[victim] Ruta capturada: ${captureRoute}`);
-//       }
+    // ── Esperar que el iframe procese el clic ────────────────────
+    await new Promise(r => setTimeout(r, 3000));
+    await browser.close();
 
-//       const blocked = blockedListRutes.some(ruta => rutaCompleta.startsWith(ruta));
-//       if (blocked) {
-//         console.log(`[victim] Ruta bloqueada: ${rutaCompleta}`);
-//         req.abort();
-//         return;
-//       }
-
-//       // ── Inyectar cookies manualmente si va a csrf ─────────────────
-//       const extraHeaders = {};
-//       if (rawUrl.includes('csrf') && sessionData?.session) {
-//         const cookieParts = [`session=${sessionData.session}`];
-//         if (sessionData.delete_token) {
-//           cookieParts.push(`delete_token=${sessionData.delete_token}`);
-//         }
-//         extraHeaders['Cookie'] = cookieParts.join('; ');
-//         console.log(`[victim] Inyectando cookies en request a csrf`);
-//       }
-
-//       if (rawUrl !== req.url()) {
-//         console.log(`[victim] Redirigiendo ${req.url()} → ${rawUrl}`);
-//         req.continue({ url: rawUrl, headers: { ...req.headers(), ...extraHeaders } });
-//       } else {
-//         req.continue({ headers: { ...req.headers(), ...extraHeaders } });
-//       }
-//     });
-
-//     const response = await page.goto(site, { waitUntil: 'networkidle2', timeout: 10000 });
-//     const status = response ? response.status() : null;
-//     console.log(`[victim] ${site} → ${status}`);
-
-//     await new Promise(r => setTimeout(r, status === 200 ? 5000 : 1000));
-//     await browser.close();
-
-//     return captureRoute;
-
-//   } catch (e) {
-//     console.log(`[victim] Error Visit: ${e.message}`);
-//     return null;
-//   }
-// }
+  } catch (e) {
+    console.log(`[clickjacking] Error: ${e.message}`);
+  }
+}

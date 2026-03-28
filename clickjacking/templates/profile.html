@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — SoundNest{% endblock %}
+{% block content %}
+<style>
+  .profile-header {
+    display: flex; align-items: center; gap: 1.5rem;
+    margin-bottom: 2.5rem; flex-wrap: wrap;
+  }
+  .avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .profile-info h1 { font-size: 1.6rem; font-weight: 800; }
+  .profile-info p  { color: var(--muted); font-family: 'Space Mono', monospace; font-size: .85rem; }
+
+  .section { margin-bottom: 2.5rem; }
+  .section-title-sm {
+    font-size: .85rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--muted); font-family: 'Space Mono', monospace;
+    margin-bottom: 1rem;
+  }
+
+  .recovery-row { display: flex; gap: .75rem; align-items: flex-end; }
+  .recovery-row .form-group { flex: 1; margin: 0; }
+  #recovery-status { font-size: .8rem; font-family: 'Space Mono', monospace; margin-top: .5rem; }
+  .ok  { color: var(--accent2); }
+  .err { color: #fca5a5; }
+
+  .songs-list { display: flex; flex-direction: column; gap: .75rem; }
+  .song-row {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .song-row-info { flex: 1; min-width: 0; }
+  .song-row-info h3 { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .song-row-info span { font-size: .8rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .song-row audio { width: 200px; height: 32px; accent-color: var(--accent); }
+  .btn-icon {
+    background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3);
+    color: #fca5a5; border-radius: 8px; padding: .4rem .7rem;
+    cursor: pointer; font-size: .85rem; transition: all .2s;
+  }
+  .btn-icon:hover { background: var(--danger); color: #fff; }
+
+  .danger-card {
+    background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.25);
+    border-radius: 12px; padding: 1.5rem;
+  }
+  .danger-card h3 { color: #fca5a5; margin-bottom: .4rem; }
+  .danger-card p  { color: var(--muted); font-size: .9rem; margin-bottom: 1.2rem; }
+</style>
+
+<div class="profile-header">
+  <div class="avatar">{{ user.username[0].upper() }}</div>
+  <div class="profile-info">
+    <h1>@{{ user.username }}</h1>
+    <p>{{ user.email }}</p>
+  </div>
+</div>
+
+<!-- Recovery email -->
+<div class="section">
+  <p class="section-title-sm">📧 Recovery Email</p>
+  <div class="card">
+    <div class="recovery-row">
+      <div class="form-group">
+        <label>Current recovery email</label>
+        <input type="email" id="recovery-input" value="{{ user.recovery_email or user.email }}" placeholder="new@email.com">
+      </div>
+      <button id="recovery_mail_button" class="btn btn-success" onclick="updateRecovery()" style="flex-shrink:0;margin-bottom:0">
+        Save
+      </button>
+    </div>
+    <p id="recovery-status"></p>
+  </div>
+</div>
+
+<!-- My songs -->
+<div class="section">
+  <p class="section-title-sm">🎵 My Songs ({{ songs|length }})</p>
+  {% if songs %}
+  <div class="songs-list" id="songs-list">
+    {% for song in songs %}
+    <div class="song-row" id="song-{{ song.id }}">
+      <div class="song-row-info">
+        <h3>{{ song.title }}</h3>
+        <span>{{ song.artist }} · {{ song.uploaded_at[:10] }}</span>
+      </div>
+      <audio controls src="{{ url_for('static', filename='uploads/' + song.filename) }}"></audio>
+      <button class="btn-icon" onclick="deleteSong({{ song.id }})" title="Delete">🗑</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:2rem;color:var(--muted)">
+    You haven't uploaded any songs yet. <a href="{{ url_for('upload') }}" style="color:var(--accent)">Upload your first one!</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Danger zone -->
+<div class="section">
+  <p class="section-title-sm">⚠️ Danger Zone</p>
+  <div class="danger-card">
+    <h3>Delete Account</h3>
+    <p>This action is irreversible. Your account and all your songs will be permanently deleted.</p>
+    <button id="delete_button"  class="btn btn-danger" onclick="openDeleteModal()">Delete My Account</button>
+  </div>
+</div>
+
+<!-- Delete account modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <button class="close-modal" onclick="closeDeleteModal()">✕</button>
+    <h2>Delete your account?</h2>
+    <p id="delete-status" class="err" style="font-size:.82rem;font-family:'Space Mono',monospace;min-height:1rem"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete Account</button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function updateRecovery() {
+  const email  = document.getElementById('recovery-input').value.trim();
+  const status = document.getElementById('recovery-status');
+  status.textContent = 'Saving…'; status.className = '';
+  const res  = await fetch('/update-recovery-email', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ recovery_email: email })
+  });
+  const data = await res.json();
+  status.textContent = data.message;
+  status.className   = data.success ? 'ok' : 'err';
+}
+
+async function deleteSong(id) {
+  if (!confirm('Delete this song?')) return;
+  const res  = await fetch(`/delete-song/${id}`, { method: 'POST' });
+  const data = await res.json();
+  if (data.success) document.getElementById(`song-${id}`).remove();
+  else alert('Error deleting song.');
+}
+
+function openDeleteModal()  { document.getElementById('delete-modal').classList.add('open'); }
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('open');
+  document.getElementById('delete-password').value = '';
+  document.getElementById('delete-status').textContent = '';
+}
+
+async function confirmDelete() {
+  const status   = document.getElementById('delete-status');
+  if (!password) { status.textContent = 'Please enter your password.'; return; }
+  status.textContent = 'Verifying…';
+  const res  = await fetch('/delete-account', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    
+  });
+  const data = await res.json();
+  if (data.success) window.location.href = '/';
+  else status.textContent = data.message;
+}
+
+document.getElementById('delete-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteModal();
+});
+const params = new URLSearchParams(window.location.search);
+const email  = params.get('email');
+
+if (email) {
+    document.getElementById('recovery-input').value = email;
+}
+</script>
+
+{% endblock %}

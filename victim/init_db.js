@@ -16,9 +16,7 @@ if (!fs.existsSync('./retos.db')) {
     'Jennifer', 'Robert', 'Linda', 'David', 'Elizabeth', 'William', 'Barbara',
     'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Karen', 'Christopher', 'Sarah'];
 
-  users.sort(function (a, b) {
-    return Math.random() - 0.5;
-  });
+  
 
 
   //---flag xss-----------------------------
@@ -47,7 +45,18 @@ if (!fs.existsSync('./retos.db')) {
       user: usersCSRF[i]
     })
   }
-   
+   //---flag clickjacking-----------------------------
+  users=["samuel","douglas"]
+  for (var i = 0; i < 2; i++) {
+    flag = makeFlag(20)
+    db.insert({
+      id: i,
+      flag: `Flisol{${flag}}`,
+      category: "clickjacking",
+      inhabited: false,
+      user: users[i]
+    })
+  }
 
   //---funcions-----------------------------
 

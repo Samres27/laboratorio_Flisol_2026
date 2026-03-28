@@ -1,0 +1,169 @@
+
+
+{% block content %}
+ <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoundNest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #0a0a0f;
+      --surface: #12121a;
+      --card:    #1a1a26;
+      --border:  #2a2a3e;
+      --accent:  #7c3aed;
+      --accent2: #06d6a0;
+      --text:    #e8e8f0;
+      --muted:   #6b6b88;
+      --danger:  #ef4444;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124,58,237,.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(6,214,160,.10) 0%, transparent 55%);
+    }
+
+    /* NAV */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(10,10,15,.7);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-brand {
+      font-size: 1.4rem; font-weight: 800; letter-spacing: -.5px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 1rem; align-items: center; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: .9rem;
+      padding: .4rem .8rem; border-radius: 6px; transition: all .2s;
+      font-family: 'Space Mono', monospace;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--card); }
+    .btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .5rem 1.2rem; border-radius: 8px; font-weight: 600;
+      font-family: 'Space Mono', monospace; font-size: .85rem;
+      cursor: pointer; border: none; text-decoration: none; transition: all .2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+    .btn-ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-success { background: var(--accent2); color: #0a0a0f; }
+    .btn-success:hover { background: #05c49a; }
+
+    /* FLASH */
+    .flashes { padding: .75rem 2.5rem; }
+    .flash {
+      padding: .75rem 1rem; border-radius: 8px; margin-bottom: .5rem;
+      font-family: 'Space Mono', monospace; font-size: .85rem;
+    }
+    .flash.success { background: rgba(6,214,160,.15); border: 1px solid rgba(6,214,160,.4); color: var(--accent2); }
+    .flash.error   { background: rgba(239,68,68,.15);  border: 1px solid rgba(239,68,68,.4);  color: #fca5a5; }
+
+    /* MAIN */
+    main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
+    /* FORM */
+    .form-group { margin-bottom: 1.2rem; }
+    label { display: block; margin-bottom: .4rem; font-size: .85rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+    input[type=text], input[type=email], input[type=password], input[type=file] {
+      width: 100%; padding: .7rem 1rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-family: 'Syne', sans-serif;
+      font-size: 1rem; outline: none; transition: border-color .2s;
+    }
+    input:focus { border-color: var(--accent); }
+    input[type=file] { cursor: pointer; }
+
+    /* CARD */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2rem;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+      z-index: 200; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 2rem; max-width: 420px; width: 90%;
+      animation: modalIn .2s ease;
+    }
+    @keyframes modalIn { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
+    .modal h2 { margin-bottom: .5rem; font-size: 1.2rem; }
+    .modal p  { color: var(--muted); font-size: .9rem; margin-bottom: 1.2rem; }
+    .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1rem; }
+    .close-modal { background: none; border: none; color: var(--muted); cursor: pointer; float: right; font-size: 1.2rem; }
+  </style>
+<style>
+  .hero { text-align: center; padding: 3rem 0 2.5rem; width: 50%; margin: auto}
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.1; margin-bottom: 1rem; }
+  .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin: 0 auto 2rem; }
+  .hero-cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  .section-title { font-size: 1.1rem; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 1.5rem; font-family: 'Space Mono', monospace; }
+
+  .songs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.2rem; }
+  .song-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.2rem; transition: border-color .2s, transform .2s;
+    display: flex; flex-direction: column; gap: .8rem;
+  }
+  .song-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .song-header { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; }
+  .song-info h3 { font-size: 1rem; font-weight: 700; }
+  .song-info span { font-size: .82rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .song-badge {
+    font-size: .7rem; padding: .2rem .6rem; border-radius: 99px;
+    background: rgba(124,58,237,.2); color: #a78bfa;
+    font-family: 'Space Mono', monospace; white-space: nowrap;
+  }
+  audio { width: 100%; height: 36px; border-radius: 6px; accent-color: var(--accent); }
+  .song-meta { font-size: .78rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .empty { text-align: center; padding: 4rem 0; color: var(--muted); }
+  .empty p { margin-bottom: 1.5rem; font-size: 1rem; }
+</style>
+
+<div class="hero">
+  <h1>Share your <span>music</span><br>with the world</h1>
+  <p>Configure your email to send access tokens</p>
+<div class="card">
+    <form method="POST" action="/init-mail">
+      <div class="form-group">
+        <label>Mail Username</label>
+        <input type="text" name="mail_username" placeholder="username@example.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label>Mail Password</label>
+        <input type="password" name="mail_password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:.75rem;">
+        Send
+      </button>
+    </form>
+  </div>
+  <div class="empty">
+  </div>
+
+{% endblock %}
