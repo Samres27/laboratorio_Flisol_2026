@@ -15,6 +15,8 @@ COPY . .
 RUN npm install
 
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+RUN sed -i '1s/^\xEF\xBB\xBF//' /docker-entrypoint.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

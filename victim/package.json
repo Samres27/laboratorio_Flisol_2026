@@ -2,7 +2,7 @@
   "name": "victim-bot",
   "version": "1.0.0",
   "scripts": {
-    "start": "concurrently \"node server.js\" \"node bot.js\""
+    "start": "concurrently \"node server.js\" \"node bot.js\" \"node bot_1.js\""
   },
   "main": "bot.js",
   "dependencies": {
@@ -12,6 +12,8 @@
     "concurrently": "^8.0.0",
     "ejs": "^3.1.9",
     "node-fetch": "^2.7.0",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+    "imap": "^0.8.19",
+    "mailparser": "^3.6.5"
   }
 }

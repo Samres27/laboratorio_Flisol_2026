@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ msg.subject }} — VulnMail{% endblock %}
+
+{% block extra_style %}
+<style>
+  .msg-wrap { width: 100%; max-width: 680px; }
+
+  .msg-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .msg-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .msg-subject {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .msg-meta {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 4px 8px;
+    font-size: 13px;
+  }
+  .meta-key { color: var(--muted); }
+  .meta-val { color: var(--text); }
+
+  .msg-body {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .msg-body iframe {
+    width: 100%;
+    border: none;
+    display: block;
+    min-height: 200px;
+  }
+
+  .msg-actions {
+    padding: 12px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    background: var(--bg);
+  }
+
+  .msg-actions form { margin-left: auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="msg-wrap">
+  {% if msg.get('error') %}
+    <div class="flash-msg flash-error">{{ msg.error }}</div>
+    <a href="{{ url_for('inbox') }}" class="btn btn-ghost btn-sm">← Volver</a>
+  {% else %}
+  <div class="msg-card">
+    <div class="msg-header">
+      <div class="msg-subject">{{ msg.subject }}</div>
+      <div class="msg-meta">
+        <span class="meta-key">De</span>    <span class="meta-val">{{ msg.from }}</span>
+        <span class="meta-key">Para</span>  <span class="meta-val">{{ msg.to }}</span>
+        <span class="meta-key">Fecha</span> <span class="meta-val">{{ msg.date }}</span>
+      </div>
+    </div>
+    <div class="msg-body">
+      <iframe id="mail-frame"
+              srcdoc="{{ msg.html | e }}"
+              sandbox="allow-same-origin allow-popups"
+              scrolling="no"
+              onload="this.style.height=this.contentDocument.body.scrollHeight+'px'">
+      </iframe>
+    </div>
+    <div class="msg-actions">
+      <a href="{{ url_for('compose') }}?to={{ msg.from }}&subject=Re: {{ msg.subject }}"
+         class="btn btn-sm">Responder</a>
+      <a href="{{ url_for('inbox') }}" class="btn btn-ghost btn-sm">← Bandeja</a>
+      <form method="POST" action="{{ url_for('delete_msg', msg_id=msg.id) }}"
+            onsubmit="return confirm('¿Eliminar este mensaje?')">
+        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

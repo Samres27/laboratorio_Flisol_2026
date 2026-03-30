@@ -1,38 +1,38 @@
 services:
-  # flask:
-  #   build:
-  #     context: .
-  #     dockerfile: ./xss/Dockerfile
-  #   restart: unless-stopped
+  flask:
+    build:
+      context: .
+      dockerfile: ./xss/Dockerfile
+    restart: unless-stopped
     
-  #   expose:
-  #     - "8000"
-  #   networks:
-  #     - lab_net
+    expose:
+      - "8000"
+    networks:
+      - lab_net
     
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-  #       max-file: "3"  # Maximum number of log files to keep
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
 
-  # xss:
-  #   image: vladimirjk/haproxy-docker-logs:1.8-alpine
-  #   restart: unless-stopped
-  #   ports:
-  #     - "127.0.0.1:80:80"
-  #     - "8404:8404"
-  #   volumes:
-  #     - ./xss/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-  #   depends_on:
-  #     - flask
-  #   networks:
-  #     - lab_net
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-  #       max-file: "3"  # Maximum number of log files to keep
+  xss:
+    image: vladimirjk/haproxy-docker-logs:1.8-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:80:80"
+      - "8404:8404"
+    volumes:
+      - ./xss/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - flask
+    networks:
+      - lab_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
 
   csrf:
     build:
@@ -77,7 +77,8 @@ services:
       - TARGET_URL=http://xss
       - VISIT_INTERVAL=1
     volumes:
-      - ./victim/:/app/
+    - ./mail_server/docker-data/dms/config/:/mailserver-config/
+    #   - ./victim/:/app/
     ports:
       - "127.0.0.1:2780:8080"
     depends_on:
@@ -85,6 +86,9 @@ services:
        - csrf
     networks:
       - lab_net
+    extra_hosts:
+      - "vulnlab.bo:127.0.0.1"
+      - "mail.vulnlab.bo:127.0.0.1"
     logging:
       driver: "json-file"
       options:
