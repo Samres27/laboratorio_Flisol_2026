@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Redactar — VulnMail{% endblock %}
+
+{% block extra_style %}
+<style>
+  .compose-wrap { width: 100%; max-width: 600px; }
+
+  .compose-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  .from-field {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    margin-bottom: 14px;
+  }
+
+  .compose-actions { display: flex; gap: 8px; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compose-wrap">
+  <div class="compose-card">
+    <h1>Nuevo mensaje</h1>
+    <p class="subtitle">Redactar correo</p>
+
+    {% for cat, msg in get_flashed_messages(with_categories=true) %}
+      <div class="flash-msg flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+
+    <form method="POST">
+      <label>De</label>
+      <div class="from-field">{{ session.user_email }}</div>
+
+      <label>Para</label>
+      <input type="email" name="to" value="{{ to }}" placeholder="destinatario@vulnlab.bo" required/>
+
+      <label>Asunto</label>
+      <input type="text" name="subject" value="{{ subject }}" placeholder="Asunto del mensaje" required/>
+
+      <label>Mensaje</label>
+      <textarea name="body" placeholder="Escribe tu mensaje aquí..."></textarea>
+
+      <div class="compose-actions">
+        <button type="submit" class="btn">Enviar</button>
+        <a href="{{ url_for('inbox') }}" class="btn btn-ghost">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

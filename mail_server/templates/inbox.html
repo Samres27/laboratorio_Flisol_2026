@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Bandeja de entrada — VulnMail{% endblock %}
+
+{% block extra_style %}
+<style>
+  .inbox-wrap { width: 100%; max-width: 760px; }
+
+  .inbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .mail-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .mail-row {
+    display: grid;
+    grid-template-columns: 180px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    color: var(--text);
+    transition: background .1s;
+  }
+  .mail-row:last-child { border-bottom: none; }
+  .mail-row:hover { background: var(--bg); }
+
+  .mail-from {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+  .mail-row:not(.unread) .mail-from { font-weight: 400; color: var(--muted); }
+
+  .mail-subject {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted);
+  }
+  .mail-row.unread .mail-subject { color: var(--text); }
+
+  .mail-date {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .unread-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  .empty {
+    padding: 48px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inbox-wrap">
+  <div class="inbox-header">
+    <div>
+      <h1>Bandeja de entrada</h1>
+      <p class="subtitle">{{ session.user_email }}</p>
+    </div>
+    <a href="{{ url_for('compose') }}" class="btn btn-sm">+ Redactar</a>
+  </div>
+
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash-msg flash-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+
+  {% if messages and messages[0].get('error') %}
+    <div class="flash-msg flash-error">Error IMAP: {{ messages[0].error }}</div>
+  {% elif messages %}
+    <div class="mail-list">
+      {% for m in messages %}
+      <a href="{{ url_for('view_message', msg_id=m.id) }}"
+         class="mail-row {% if not m.seen %}unread{% endif %}">
+        <div class="mail-from">
+          {% if not m.seen %}<span class="unread-dot"></span>{% endif %}{{ m.from }}
+        </div>
+        <div class="mail-subject">{{ m.subject }}</div>
+        <div class="mail-date">{{ m.date[:16] if m.date else '' }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">No hay mensajes en tu bandeja.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
+    container_name: mailserver
+    hostname: mail.vulnlab.bo
+    domainname: vulnlab.bo
+    env_file: mailserver.env
+    ports:
+      - "25:25"
+      - "143:143"
+      - "465:465"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - mail-data:/var/mail/
+      - mail-state:/var/mail-state/
+      - mail-logs:/var/log/mail/
+      - ./docker-data/dms/config/:/tmp/docker-mailserver/
+    extra_hosts:
+      - "vulnlab.bo:127.0.0.1"
+      - "mail.vulnlab.bo:127.0.0.1"
+    cap_add:
+      - NET_ADMIN
+    restart: always
+    networks:
+      - mailnet
+
+  web:
+    build: .
+    container_name: mail-web
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=cambia-esta-clave-secreta
+      - ADMIN_USER=admin@vulnlab.bo
+      - ADMIN_PASS=admin123
+      - MAILSERVER_CONFIG=/mailserver-config
+      - IMAP_HOST=mailserver
+      - IMAP_PORT=143
+      - SMTP_HOST=mailserver
+      - SMTP_PORT=25
+    volumes:
+      - ./docker-data/dms/config/:/mailserver-config/
+    extra_hosts:
+      - "vulnlab.bo:127.0.0.1"
+      - "mail.vulnlab.bo:127.0.0.1"
+    depends_on:
+      - mailserver
+    restart: always
+    networks:
+      - mailnet
+
+networks:
+  mailnet:
+    driver: bridge
+
+volumes:
+  mail-data:
+  mail-state:

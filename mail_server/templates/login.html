@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión — VulnMail{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Iniciar sesión</h1>
+  <p class="subtitle">Accede a tu buzón</p>
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash-msg flash-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+  <form method="POST">
+    <label>Correo electrónico</label>
+    <input type="email" name="email" placeholder="usuario@vulnlab.bo" required autocomplete="off"/>
+    <label>Contraseña</label>
+    <input type="password" name="password" placeholder="Tu contraseña" required/>
+    <button type="submit" class="btn btn-full">Entrar</button>
+  </form>
+  <a href="{{ url_for('register') }}" class="link">¿No tienes cuenta? <span>Regístrate</span></a>
+</div>
+{% endblock %}

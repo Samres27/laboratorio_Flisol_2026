@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Registro — VulnMail{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Crear cuenta</h1>
+  <p class="subtitle">Nuevo buzón de correo</p>
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash-msg flash-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+  <form method="POST">
+    <label>Correo electrónico</label>
+    <input type="email" name="email" placeholder="usuario@vulnlab.bo" required autocomplete="off"/>
+    <label>Contraseña</label>
+    <input type="password" name="password" placeholder="Mínimo 8 caracteres" required/>
+    <label>Confirmar contraseña</label>
+    <input type="password" name="confirm" placeholder="Repite la contraseña" required/>
+    <button type="submit" class="btn btn-full">Registrarse</button>
+  </form>
+  <a href="{{ url_for('user_login') }}" class="link">¿Ya tienes cuenta? <span>Inicia sesión</span></a>
+</div>
+{% endblock %}

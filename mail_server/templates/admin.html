@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Administración — VulnMail{% endblock %}
+
+{% block extra_style %}
+<style>
+  .admin-wrap { width: 100%; max-width: 680px; }
+
+  .admin-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  .count {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .count strong { color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  td {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #dafbe1;
+    color: var(--success);
+    border: 1px solid #9ddcb3;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
+  <div class="admin-card">
+    <h1>Administración</h1>
+    <p class="subtitle">Gestión de cuentas · vulnlab.bo</p>
+
+    {% for cat, msg in get_flashed_messages(with_categories=true) %}
+      <div class="flash-msg flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+
+    <p class="count"><strong>{{ accounts|length }}</strong> cuenta(s) registradas</p>
+
+    {% if accounts %}
+    <table>
+      <thead>
+        <tr><th>#</th><th>Correo</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for acc in accounts %}
+        <tr>
+          <td style="color:var(--muted)">{{ loop.index }}</td>
+          <td>{{ acc }}</td>
+          <td><span class="tag">Activo</span></td>
+          <td style="text-align:right">
+            <form method="POST" action="{{ url_for('admin_delete', email_addr=acc) }}"
+                  onsubmit="return confirm('¿Eliminar {{ acc }}?')">
+              <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p style="color:var(--muted); font-size:13px; margin-top:12px">No hay cuentas registradas.</p>
+    {% endif %}
+
+    <div style="margin-top:20px">
+      <a href="{{ url_for('register') }}" class="btn btn-sm">+ Nueva cuenta</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
