@@ -29,7 +29,7 @@ async function visit(page, url) {
     try {
         const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 10000 });
         const status = response ? response.status() : null;
-        // console.log(`[victim] ${url} → ${status}`); //funcion muy pesada
+         console.log(`[victim] ${url} → ${status}`); //funcion muy pesada
 
         if (status === 200) {
             await page.waitForTimeout(5000);

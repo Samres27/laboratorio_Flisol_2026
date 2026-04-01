@@ -1,38 +1,38 @@
 services:
-  # flask:
-  #   build:
-  #     context: .
-  #     dockerfile: ./xss/Dockerfile
-  #   restart: unless-stopped
+  flask:
+    build:
+      context: .
+      dockerfile: ./xss/Dockerfile
+    restart: unless-stopped
     
-  #   expose:
-  #     - "8000"
-  #   networks:
-  #     - lab_net
+    expose:
+      - "8000"
+    networks:
+      - lab_net
     
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-  #       max-file: "3"  # Maximum number of log files to keep
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
 
-  # xss:
-  #   image: vladimirjk/haproxy-docker-logs:1.8-alpine
-  #   restart: unless-stopped
-  #   ports:
-  #     - "127.0.0.1:80:80"
-  #     - "8404:8404"
-  #   volumes:
-  #     - ./xss/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-  #   depends_on:
-  #     - flask
-  #   networks:
-  #     - lab_net
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-  #       max-file: "3"  # Maximum number of log files to keep
+  xss:
+    image: vladimirjk/haproxy-docker-logs:1.8-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:80:80"
+      - "8404:8404"
+    volumes:
+      - ./xss/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - flask
+    networks:
+      - lab_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
 
   csrf:
     build:
@@ -45,6 +45,7 @@ services:
       - "127.0.0.1:81:80"
     networks:
       - lab_net
+    
 
     logging:
       driver: "json-file"
@@ -62,7 +63,6 @@ services:
       - "127.0.0.1:82:443"
     networks:
       - lab_net
-
     logging:
       driver: "json-file"
       options:
@@ -78,15 +78,16 @@ services:
       - VISIT_INTERVAL=1
     volumes:
     - ./mail_server/docker-data/dms/config/:/mailserver-config/
-    #   - ./victim/:/app/
+    - victim-data:/app/
     ports:
       - "127.0.0.1:1001:8080"
     depends_on:
-      # - xss
-      #- csrf
+      - xss
+      - csrf
       - clickjacking
     networks:
       - lab_net
+    
     extra_hosts:
       - "vulnlab.bo:127.0.0.1"
       - "mail.vulnlab.bo:127.0.0.1"
@@ -138,7 +139,6 @@ services:
       - SMTP_HOST=mailserver
       - SMTP_PORT=25
     volumes:
-      # Usa la misma ruta base
       - ./mail_server/docker-data/dms/config/:/mailserver-config/
     extra_hosts:
       - "vulnlab.bo:127.0.0.1"
@@ -156,3 +156,4 @@ volumes:
   mail-data:
   mail-state:
   mail-logs:
+  victim-data:

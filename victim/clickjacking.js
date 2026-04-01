@@ -60,7 +60,7 @@ async function loginSoundNest(page, username, password) {
 // ── Publicar canción con la flag (reward) ─────────────────────────────────────
 async function publishFlag(sessionValue, flag, title, isPrivate = true) {
     const mp3 = silentMp3();
-    console.log(`[publishFlag] mp3 type: ${typeof mp3} | isBuffer: ${Buffer.isBuffer(mp3)} | size: ${mp3.length}`);
+    //console.log(`[publishFlag] mp3 type: ${typeof mp3} | isBuffer: ${Buffer.isBuffer(mp3)} | size: ${mp3.length}`);
     
     const form = new FormData();
     form.append('title', title);
@@ -78,7 +78,7 @@ async function publishFlag(sessionValue, flag, title, isPrivate = true) {
         agent: httpsAgent,
         redirect: 'manual',
     });
-    console.log(`[clickjacking] Flag "${title}" [${isPrivate ? 'PRIVADA' : 'PÚBLICA'}] → ${res.status}`);
+    //console.log(`[clickjacking] Flag "${title}" [${isPrivate ? 'PRIVADA' : 'PÚBLICA'}] → ${res.status}`);
 }
 
 // ── visitClickjacking ─────────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ const { resolveUrl } = require('./utils');
 
 async function visitClickjacking(site, flag, sessionData) {
     const resolvedSite = resolveUrl(site);
-    console.log(`[clickjacking] Visitando PoC: ${resolvedSite}`);
+    //console.log(`[clickjacking] Visitando PoC: ${resolvedSite}`);
     let browser;
     try {
         browser = await launchBrowser();
@@ -102,7 +102,7 @@ async function visitClickjacking(site, flag, sessionData) {
             console.warn(`[clickjacking] Login fallido para ${sessionData.username}`);
             return;
         }
-        console.log(`[clickjacking] Sesión obtenida: ${sessionCookie.value.substring(0, 20)}...`);
+        //console.log(`[clickjacking] Sesión obtenida: ${sessionCookie.value.substring(0, 20)}...`);
 
         // 2. Guardar cookies
         const savedCookies = await page.cookies(TARGET);
@@ -120,7 +120,7 @@ async function visitClickjacking(site, flag, sessionData) {
             }
 
             if (intercepted !== req.url()) {
-                console.log(`[intercept] ${req.url()} → ${intercepted}`);
+                //console.log(`[intercept] ${req.url()} → ${intercepted}`);
             }
 
             req.continue({ url: intercepted, headers: { ...req.headers(), ...extraHeaders } });
@@ -132,7 +132,7 @@ async function visitClickjacking(site, flag, sessionData) {
                 const iframe = document.querySelector('iframe');
                 if (iframe && iframe.src.includes('127.0.0.1:82')) {
                     iframe.src = iframe.src.replace('127.0.0.1:82', 'clickjacking');
-                    console.log('Iframe src corregido:', iframe.src);
+                    //console.log('Iframe src corregido:', iframe.src);
                 }
             });
             observer.observe(document, { childList: true, subtree: true });
@@ -140,7 +140,7 @@ async function visitClickjacking(site, flag, sessionData) {
 
         // Luego navegar al PoC
         await page.goto(resolvedSite, { waitUntil: 'networkidle2', timeout: 10000 });
-        console.log(`[clickjacking] PoC cargado`);
+        //console.log(`[clickjacking] PoC cargado`);
 
         // 5. Verificar que el iframe cargó correctamente
         const iframeStatus = await page.evaluate(() => {
@@ -148,7 +148,7 @@ async function visitClickjacking(site, flag, sessionData) {
             if (!iframe) return 'no iframe encontrado';
             return `src=${iframe.src}, loaded=${iframe.contentDocument !== null}`;
         });
-        console.log(`[clickjacking] Iframe status: ${iframeStatus}`);
+        //console.log(`[clickjacking] Iframe status: ${iframeStatus}`);
 
         // Guardar screenshot para ver qué cargó
         await page.screenshot({ path: '/tmp/poc.png' });
@@ -169,7 +169,7 @@ async function visitClickjacking(site, flag, sessionData) {
                 const linkText = await link.evaluate(el => el.textContent.trim().toLowerCase());
                 if (linkText.includes(text) && !btns.includes(link)) {
                     btns.push(link);
-                    console.log(`[clickjacking] Botón encontrado: "${linkText}"`);
+                    //console.log(`[clickjacking] Botón encontrado: "${linkText}"`);
                     break;
                 }
             }
@@ -182,19 +182,19 @@ async function visitClickjacking(site, flag, sessionData) {
 
         for (const btn of btns) {
             const box = await btn.boundingBox();
-            console.log(`[clickjacking] Botón en: x=${box?.x}, y=${box?.y}`);
+            //console.log(`[clickjacking] Botón en: x=${box?.x}, y=${box?.y}`);
 
             if (box) {
                 const clickX = Math.round(box.x + box.width / 2);
                 const clickY = Math.round(box.y + box.height / 2);
-                console.log(`[clickjacking] Haciendo clic en (${clickX}, ${clickY})`);
+                //console.log(`[clickjacking] Haciendo clic en (${clickX}, ${clickY})`);
                 await page.mouse.click(clickX, clickY);
                 await new Promise(r => setTimeout(r, 2000));  // 2s entre cada clic
             }
         }
         await new Promise(r => setTimeout(r, 3000));
         await page.screenshot({ path: '/tmp/after_click.png' });
-        console.log(`[clickjacking] Screenshots en /tmp/poc.png y /tmp/after_click.png`);
+        //console.log(`[clickjacking] Screenshots en /tmp/poc.png y /tmp/after_click.png`);
 
 
 
@@ -234,7 +234,7 @@ async function verifyReto1(reto) {
 
         // Si el recovery email fue cambiado a vuln@vulnlab.bo → reto completado
         if (html.includes('vuln@vulnlab.bo')) {
-            console.log(`[clickjacking] ✅ Reto 1 completado — ${reto.user} recovery email cambiado`);
+            //console.log(`[clickjacking] ✅ Reto 1 completado — ${reto.user} recovery email cambiado`);
             await publishFlag(session, reto.flag, `Clickjacking Reto 1 — ${reto.user}`);
 
             // Marcar como completado en DB (se pasa la db desde bot.js via evento o callback)
@@ -248,9 +248,9 @@ async function verifyReto1(reto) {
 
 // ── verifyReto2: cuenta víctima eliminada ─────────────────────────────────────
 async function verifyReto2(reto) {
-    console.log(`[verifyReto2] Iniciando verificación para user: ${reto.user}`);
+    //console.log(`[verifyReto2] Iniciando verificación para user: ${reto.user}`);
     try {
-        console.log(`[verifyReto2] Intentando login en ${TARGET}/login para ${reto.user}`);
+        //console.log(`[verifyReto2] Intentando login en ${TARGET}/login para ${reto.user}`);
         const res = await fetch(`${TARGET}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -265,13 +265,13 @@ async function verifyReto2(reto) {
         const sessionMatch = setCookie.match(/session=([^;]+)/);
         const sessionValue = sessionMatch?.[1] ?? '';
 
-        console.log(`[verifyReto2] HTTP ${res.status} | location: "${location}" | session value: "${sessionValue}"`);
+        //console.log(`[verifyReto2] HTTP ${res.status} | location: "${location}" | session value: "${sessionValue}"`);
 
         // Cuenta eliminada si: no hay sesión, o la sesión está vacía/expirada
         const accountDeleted = !sessionValue || sessionValue.trim() === '' || setCookie.includes('Max-Age=0');
 
         if (accountDeleted) {
-            console.log(`[clickjacking] ✅ Reto 2 completado — cuenta ${reto.user} eliminada`);
+            //console.log(`[clickjacking] ✅ Reto 2 completado — cuenta ${reto.user} eliminada`);
 
             // Intentar admin primero, si falla crear usuario temporal
             let sessionToUse = null;
@@ -295,9 +295,9 @@ async function verifyReto2(reto) {
             }
 
             if (sessionToUse) {
-                console.log(`[verifyReto2] Publicando flag para ${reto.user}...`);
+                //console.log(`[verifyReto2] Publicando flag para ${reto.user}...`);
                await publishFlag(sessionToUse, reto.flag, `Clickjacking Reto 2 — ${reto.user}`, false);
-                console.log(`[verifyReto2] ✅ Flag publicada`);
+                ////console.log(`[verifyReto2] ✅ Flag publicada`);
             } else {
                 console.warn(`[verifyReto2] ❌ No se pudo obtener sesión — flag no publicada`);
             }
@@ -305,7 +305,7 @@ async function verifyReto2(reto) {
             return true;
         }
 
-        console.log(`[verifyReto2] ❌ Sin resolver — cuenta ${reto.user} aún existe`);
+        //console.log(`[verifyReto2] ❌ Sin resolver — cuenta ${reto.user} aún existe`);
     } catch (e) {
         console.warn(`[verifyReto2] ❌ Error verificando ${reto.user}: ${e.message}`);
     }
@@ -341,13 +341,13 @@ async function registerTempUser() {
 
     const setCookie = loginRes.headers.get('set-cookie') ?? '';
     const session = setCookie.match(/session=([^;]+)/)?.[1];
-    console.log(`[registerTempUser] ${tempUser} → login HTTP ${loginRes.status} | session: ${session ? 'OK' : 'FAIL'}`);
+    //console.log(`[registerTempUser] ${tempUser} → login HTTP ${loginRes.status} | session: ${session ? 'OK' : 'FAIL'}`);
     return session ?? null;
 }
 // async function findAllElementsWithC(page) {
-//     console.log('\n' + '='.repeat(60));
-//     console.log('🔍 BUSCANDO ELEMENTOS QUE CONTENGAN "C"');
-//     console.log('='.repeat(60));
+//     //console.log('\n' + '='.repeat(60));
+//     //console.log('🔍 BUSCANDO ELEMENTOS QUE CONTENGAN "C"');
+//     //console.log('='.repeat(60));
 
 //     const results = await page.evaluate(() => {
 //         const allElements = document.querySelectorAll('*');
@@ -399,7 +399,7 @@ async function registerTempUser() {
 //     });
 
 //     // Imprimir resultados
-//     console.log(`\n📊 TOTAL: ${results.length} elementos encontrados\n`);
+//     //console.log(`\n📊 TOTAL: ${results.length} elementos encontrados\n`);
 
 //     // Agrupar por tipo de coincidencia
 //     const byText = results.filter(r => r.hasCInText);
@@ -407,31 +407,31 @@ async function registerTempUser() {
 //     const byClass = results.filter(r => r.hasCInClass);
 //     const byAttr = results.filter(r => r.attrsWithC.length > 0);
 
-//     console.log(`📝 Por texto: ${byText.length}`);
-//     console.log(`🏷️ Por ID: ${byId.length}`);
-//     console.log(`🎨 Por clase: ${byClass.length}`);
-//     console.log(`🔧 Por atributos: ${byAttr.length}`);
+//     //console.log(`📝 Por texto: ${byText.length}`);
+//     //console.log(`🏷️ Por ID: ${byId.length}`);
+//     //console.log(`🎨 Por clase: ${byClass.length}`);
+//     //console.log(`🔧 Por atributos: ${byAttr.length}`);
 
-//     console.log('\n' + '-'.repeat(60));
-//     console.log('🔍 DETALLE DE ELEMENTOS:');
-//     console.log('-'.repeat(60));
+//     //console.log('\n' + '-'.repeat(60));
+//     //console.log('🔍 DETALLE DE ELEMENTOS:');
+//     //console.log('-'.repeat(60));
 
 //     results.forEach((el, i) => {
-//         console.log(`\n${i + 1}. ${el.tag}${el.id ? '#' + el.id : ''}${el.class ? '.' + el.class.split(' ')[0] : ''}`);
-//         console.log(`   📍 Posición: (${el.position.x}, ${el.position.y}) ${el.position.width}x${el.position.height}`);
-//         console.log(`   👁️ Visible: ${el.visible}`);
+//         //console.log(`\n${i + 1}. ${el.tag}${el.id ? '#' + el.id : ''}${el.class ? '.' + el.class.split(' ')[0] : ''}`);
+//         //console.log(`   📍 Posición: (${el.position.x}, ${el.position.y}) ${el.position.width}x${el.position.height}`);
+//         //console.log(`   👁️ Visible: ${el.visible}`);
 
 //         if (el.hasCInText) {
-//             console.log(`   📝 Texto: "${el.text}"`);
+//             //console.log(`   📝 Texto: "${el.text}"`);
 //         }
 //         if (el.hasCInId) {
-//             console.log(`   🏷️ ID: ${el.id}`);
+//             //console.log(`   🏷️ ID: ${el.id}`);
 //         }
 //         if (el.hasCInClass) {
-//             console.log(`   🎨 Clase: ${el.class}`);
+//             //console.log(`   🎨 Clase: ${el.class}`);
 //         }
 //         if (el.attrsWithC.length > 0) {
-//             console.log(`   🔧 Atributos: ${el.attrsWithC.join(', ')}`);
+//             //console.log(`   🔧 Atributos: ${el.attrsWithC.join(', ')}`);
 //         }
 //     });
 
