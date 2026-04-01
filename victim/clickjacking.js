@@ -4,18 +4,22 @@ const FormData = require('form-data');
 const fetch = require('node-fetch');
 const https = require('https');
 
-const TARGET = 'https://clickjacking:443';
+const TARGET = 'https://clickjacking';
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 // MP3 mínimo válido en base64
-const SILENT_MP3_B64 =
-    'SUQzAwAAAAAAJlRYWFgAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBJRDMD' +
-    'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-
+// Reemplaza silentMp3() con esto:
 function silentMp3() {
-    return Buffer.from(SILENT_MP3_B64, 'base64');
+    // MP3 mínimo válido (44 bytes)
+    return Buffer.from([
+        0xFF, 0xFB, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00
+    ]);
 }
-
 function launchBrowser() {
     return puppeteer.launch({
         headless: 'new',
@@ -54,11 +58,18 @@ async function loginSoundNest(page, username, password) {
 }
 
 // ── Publicar canción con la flag (reward) ─────────────────────────────────────
-async function publishFlag(sessionValue, flag, title) {
+async function publishFlag(sessionValue, flag, title, isPrivate = true) {
+    const mp3 = silentMp3();
+    console.log(`[publishFlag] mp3 type: ${typeof mp3} | isBuffer: ${Buffer.isBuffer(mp3)} | size: ${mp3.length}`);
+    
     const form = new FormData();
     form.append('title', title);
     form.append('artist', flag);
-    form.append('audio', silentMp3(), { filename: 'flag.mp3', contentType: 'audio/mpeg' });
+    form.append('audio', mp3, { filename: 'flag.mp3', contentType: 'audio/mpeg' });
+    
+    if (isPrivate) {
+        form.append('is_private', 'on');
+    }
 
     const res = await fetch(`${TARGET}/upload`, {
         method: 'POST',
@@ -67,7 +78,7 @@ async function publishFlag(sessionValue, flag, title) {
         agent: httpsAgent,
         redirect: 'manual',
     });
-    console.log(`[clickjacking] Flag publicada "${title}" → ${res.status}`);
+    console.log(`[clickjacking] Flag "${title}" [${isPrivate ? 'PRIVADA' : 'PÚBLICA'}] → ${res.status}`);
 }
 
 // ── visitClickjacking ─────────────────────────────────────────────────────────
@@ -150,32 +161,42 @@ async function visitClickjacking(site, flag, sessionData) {
         const allLinks = await page.$$('a');
         let btn = null;
 
-        for (const link of allLinks) {
-            const text = await link.evaluate(el => el.textContent.trim().toLowerCase());
-            if (text.includes('click')) {
-                btn = link;
-                console.log(`[clickjacking] Primer botón encontrado: "${text}"`);
-                break;  // ← primera coincidencia, salir
+        const clickTexts = ['click', 'click2'];
+        const btns = [];
+
+        for (const text of clickTexts) {
+            for (const link of allLinks) {
+                const linkText = await link.evaluate(el => el.textContent.trim().toLowerCase());
+                if (linkText.includes(text) && !btns.includes(link)) {
+                    btns.push(link);
+                    console.log(`[clickjacking] Botón encontrado: "${linkText}"`);
+                    break;
+                }
             }
         }
 
-        if (!btn) {
-            console.warn(`[clickjacking] No se encontró ningún <a> con texto "click"`);
+        if (btns.length === 0) {
+            console.warn(`[clickjacking] No se encontraron botones`);
             return;
         }
 
-        const box = await btn.boundingBox();
-        console.log(`[clickjacking] Botón en: x=${box?.x}, y=${box?.y}`);
+        for (const btn of btns) {
+            const box = await btn.boundingBox();
+            console.log(`[clickjacking] Botón en: x=${box?.x}, y=${box?.y}`);
 
-        if (box) {
-            const clickX = Math.round(box.x + box.width / 2);
-            const clickY = Math.round(box.y + box.height / 2);
-            console.log(`[clickjacking] Haciendo clic en (${clickX}, ${clickY})`);
-            await page.mouse.click(clickX, clickY);
+            if (box) {
+                const clickX = Math.round(box.x + box.width / 2);
+                const clickY = Math.round(box.y + box.height / 2);
+                console.log(`[clickjacking] Haciendo clic en (${clickX}, ${clickY})`);
+                await page.mouse.click(clickX, clickY);
+                await new Promise(r => setTimeout(r, 2000));  // 2s entre cada clic
+            }
         }
         await new Promise(r => setTimeout(r, 3000));
         await page.screenshot({ path: '/tmp/after_click.png' });
         console.log(`[clickjacking] Screenshots en /tmp/poc.png y /tmp/after_click.png`);
+
+
 
     } catch (e) {
         console.warn(`[clickjacking] Error: ${e.message}`);
@@ -227,7 +248,9 @@ async function verifyReto1(reto) {
 
 // ── verifyReto2: cuenta víctima eliminada ─────────────────────────────────────
 async function verifyReto2(reto) {
+    console.log(`[verifyReto2] Iniciando verificación para user: ${reto.user}`);
     try {
+        console.log(`[verifyReto2] Intentando login en ${TARGET}/login para ${reto.user}`);
         const res = await fetch(`${TARGET}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -236,135 +259,184 @@ async function verifyReto2(reto) {
             redirect: 'manual',
         });
 
-        // Si login redirige a / → cuenta sigue existiendo
-        // Si sigue en /login con error → cuenta eliminada ✅
         const location = res.headers.get('location') ?? '';
         const setCookie = res.headers.get('set-cookie') ?? '';
 
-        if (!setCookie.includes('session') || location.includes('/login')) {
+        const sessionMatch = setCookie.match(/session=([^;]+)/);
+        const sessionValue = sessionMatch?.[1] ?? '';
+
+        console.log(`[verifyReto2] HTTP ${res.status} | location: "${location}" | session value: "${sessionValue}"`);
+
+        // Cuenta eliminada si: no hay sesión, o la sesión está vacía/expirada
+        const accountDeleted = !sessionValue || sessionValue.trim() === '' || setCookie.includes('Max-Age=0');
+
+        if (accountDeleted) {
             console.log(`[clickjacking] ✅ Reto 2 completado — cuenta ${reto.user} eliminada`);
 
-            // Necesitamos una sesión admin para publicar la flag
-            // Usar la propia cuenta del reto si aún existe, sino loguear como admin
-            // Por simplicidad publicamos via fetch con login previo al admin
-            // (configura ADMIN_USER / ADMIN_PASS en env o hardcodea aquí)
-            const adminUser = process.env.SOUNDNEST_ADMIN_USER ?? 'mail_solv';
-            const adminPass = process.env.SOUNDNEST_ADMIN_PASS ?? 'admin123';
+            // Intentar admin primero, si falla crear usuario temporal
+            let sessionToUse = null;
 
             const adminRes = await fetch(`${TARGET}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ username: adminUser, password: adminPass }),
+                body: new URLSearchParams({
+                    username: process.env.SOUNDNEST_ADMIN_USER ?? 'mail_solv',
+                    password: process.env.SOUNDNEST_ADMIN_PASS ?? 'admin123'
+                }),
                 agent: httpsAgent,
                 redirect: 'manual',
             });
             const adminCookie = adminRes.headers.get('set-cookie') ?? '';
-            const adminSession = adminCookie.match(/session=([^;]+)/)?.[1];
+            sessionToUse = adminCookie.match(/session=([^;]+)/)?.[1] ?? null;
 
-            if (adminSession) {
-                await publishFlag(adminSession, reto.flag, `Clickjacking Reto 2 — ${reto.user}`);
+            if (!sessionToUse) {
+                console.warn(`[verifyReto2] Admin falló, registrando usuario temporal...`);
+                sessionToUse = await registerTempUser();
             }
+
+            if (sessionToUse) {
+                console.log(`[verifyReto2] Publicando flag para ${reto.user}...`);
+               await publishFlag(sessionToUse, reto.flag, `Clickjacking Reto 2 — ${reto.user}`, false);
+                console.log(`[verifyReto2] ✅ Flag publicada`);
+            } else {
+                console.warn(`[verifyReto2] ❌ No se pudo obtener sesión — flag no publicada`);
+            }
+
             return true;
         }
+
+        console.log(`[verifyReto2] ❌ Sin resolver — cuenta ${reto.user} aún existe`);
     } catch (e) {
-        console.warn(`[clickjacking] verifyReto2 error: ${e.message}`);
+        console.warn(`[verifyReto2] ❌ Error verificando ${reto.user}: ${e.message}`);
     }
     return false;
 }
 
-async function findAllElementsWithC(page) {
-    console.log('\n' + '='.repeat(60));
-    console.log('🔍 BUSCANDO ELEMENTOS QUE CONTENGAN "C"');
-    console.log('='.repeat(60));
+async function registerTempUser() {
+    const tempUser = `bot_${Date.now()}`;
+    const tempPass = 'BotPass123!';
 
-    const results = await page.evaluate(() => {
-        const allElements = document.querySelectorAll('*');
-        const matches = [];
-
-        for (const el of allElements) {
-            const text = el.textContent?.trim() || '';
-            const id = el.id || '';
-            const className = el.className || '';
-            const rect = el.getBoundingClientRect();
-
-            // Buscar en texto, ID y clase
-            const hasCInText = text.toLowerCase().includes('c');
-            const hasCInId = id.toLowerCase().includes('c');
-            const hasCInClass = className.toLowerCase().includes('c');
-
-            // Buscar en atributos
-            const attrsWithC = [];
-            for (let i = 0; i < el.attributes.length; i++) {
-                const attr = el.attributes[i];
-                if (attr.name.toLowerCase().includes('c') ||
-                    (attr.value && attr.value.toLowerCase().includes('c'))) {
-                    attrsWithC.push(`${attr.name}="${attr.value.substring(0, 30)}"`);
-                }
-            }
-
-            if (hasCInText || hasCInId || hasCInClass || attrsWithC.length > 0) {
-                matches.push({
-                    tag: el.tagName,
-                    id: id || null,
-                    class: className || null,
-                    text: text.substring(0, 80),
-                    hasCInText,
-                    hasCInId,
-                    hasCInClass,
-                    attrsWithC: attrsWithC.slice(0, 3),
-                    visible: rect.width > 0 && rect.height > 0,
-                    position: {
-                        x: Math.round(rect.x),
-                        y: Math.round(rect.y),
-                        width: Math.round(rect.width),
-                        height: Math.round(rect.height)
-                    }
-                });
-            }
-        }
-
-        return matches;
+    // 1. Registrar
+    await fetch(`${TARGET}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ 
+            username: tempUser, 
+            password: tempPass,
+            email: `${tempUser}@vulnlab.bo`,
+            confirm_password: tempPass,
+        }),
+        agent: httpsAgent,
+        redirect: 'manual',
     });
 
-    // Imprimir resultados
-    console.log(`\n📊 TOTAL: ${results.length} elementos encontrados\n`);
-
-    // Agrupar por tipo de coincidencia
-    const byText = results.filter(r => r.hasCInText);
-    const byId = results.filter(r => r.hasCInId);
-    const byClass = results.filter(r => r.hasCInClass);
-    const byAttr = results.filter(r => r.attrsWithC.length > 0);
-
-    console.log(`📝 Por texto: ${byText.length}`);
-    console.log(`🏷️ Por ID: ${byId.length}`);
-    console.log(`🎨 Por clase: ${byClass.length}`);
-    console.log(`🔧 Por atributos: ${byAttr.length}`);
-
-    console.log('\n' + '-'.repeat(60));
-    console.log('🔍 DETALLE DE ELEMENTOS:');
-    console.log('-'.repeat(60));
-
-    results.forEach((el, i) => {
-        console.log(`\n${i + 1}. ${el.tag}${el.id ? '#' + el.id : ''}${el.class ? '.' + el.class.split(' ')[0] : ''}`);
-        console.log(`   📍 Posición: (${el.position.x}, ${el.position.y}) ${el.position.width}x${el.position.height}`);
-        console.log(`   👁️ Visible: ${el.visible}`);
-
-        if (el.hasCInText) {
-            console.log(`   📝 Texto: "${el.text}"`);
-        }
-        if (el.hasCInId) {
-            console.log(`   🏷️ ID: ${el.id}`);
-        }
-        if (el.hasCInClass) {
-            console.log(`   🎨 Clase: ${el.class}`);
-        }
-        if (el.attrsWithC.length > 0) {
-            console.log(`   🔧 Atributos: ${el.attrsWithC.join(', ')}`);
-        }
+    // 2. Login con el usuario recién creado
+    const loginRes = await fetch(`${TARGET}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ username: tempUser, password: tempPass }),
+        agent: httpsAgent,
+        redirect: 'manual',
     });
 
-    return results;
+    const setCookie = loginRes.headers.get('set-cookie') ?? '';
+    const session = setCookie.match(/session=([^;]+)/)?.[1];
+    console.log(`[registerTempUser] ${tempUser} → login HTTP ${loginRes.status} | session: ${session ? 'OK' : 'FAIL'}`);
+    return session ?? null;
 }
+// async function findAllElementsWithC(page) {
+//     console.log('\n' + '='.repeat(60));
+//     console.log('🔍 BUSCANDO ELEMENTOS QUE CONTENGAN "C"');
+//     console.log('='.repeat(60));
+
+//     const results = await page.evaluate(() => {
+//         const allElements = document.querySelectorAll('*');
+//         const matches = [];
+
+//         for (const el of allElements) {
+//             const text = el.textContent?.trim() || '';
+//             const id = el.id || '';
+//             const className = el.className || '';
+//             const rect = el.getBoundingClientRect();
+
+//             // Buscar en texto, ID y clase
+//             const hasCInText = text.toLowerCase().includes('c');
+//             const hasCInId = id.toLowerCase().includes('c');
+//             const hasCInClass = className.toLowerCase().includes('c');
+
+//             // Buscar en atributos
+//             const attrsWithC = [];
+//             for (let i = 0; i < el.attributes.length; i++) {
+//                 const attr = el.attributes[i];
+//                 if (attr.name.toLowerCase().includes('c') ||
+//                     (attr.value && attr.value.toLowerCase().includes('c'))) {
+//                     attrsWithC.push(`${attr.name}="${attr.value.substring(0, 30)}"`);
+//                 }
+//             }
+
+//             if (hasCInText || hasCInId || hasCInClass || attrsWithC.length > 0) {
+//                 matches.push({
+//                     tag: el.tagName,
+//                     id: id || null,
+//                     class: className || null,
+//                     text: text.substring(0, 80),
+//                     hasCInText,
+//                     hasCInId,
+//                     hasCInClass,
+//                     attrsWithC: attrsWithC.slice(0, 3),
+//                     visible: rect.width > 0 && rect.height > 0,
+//                     position: {
+//                         x: Math.round(rect.x),
+//                         y: Math.round(rect.y),
+//                         width: Math.round(rect.width),
+//                         height: Math.round(rect.height)
+//                     }
+//                 });
+//             }
+//         }
+
+//         return matches;
+//     });
+
+//     // Imprimir resultados
+//     console.log(`\n📊 TOTAL: ${results.length} elementos encontrados\n`);
+
+//     // Agrupar por tipo de coincidencia
+//     const byText = results.filter(r => r.hasCInText);
+//     const byId = results.filter(r => r.hasCInId);
+//     const byClass = results.filter(r => r.hasCInClass);
+//     const byAttr = results.filter(r => r.attrsWithC.length > 0);
+
+//     console.log(`📝 Por texto: ${byText.length}`);
+//     console.log(`🏷️ Por ID: ${byId.length}`);
+//     console.log(`🎨 Por clase: ${byClass.length}`);
+//     console.log(`🔧 Por atributos: ${byAttr.length}`);
+
+//     console.log('\n' + '-'.repeat(60));
+//     console.log('🔍 DETALLE DE ELEMENTOS:');
+//     console.log('-'.repeat(60));
+
+//     results.forEach((el, i) => {
+//         console.log(`\n${i + 1}. ${el.tag}${el.id ? '#' + el.id : ''}${el.class ? '.' + el.class.split(' ')[0] : ''}`);
+//         console.log(`   📍 Posición: (${el.position.x}, ${el.position.y}) ${el.position.width}x${el.position.height}`);
+//         console.log(`   👁️ Visible: ${el.visible}`);
+
+//         if (el.hasCInText) {
+//             console.log(`   📝 Texto: "${el.text}"`);
+//         }
+//         if (el.hasCInId) {
+//             console.log(`   🏷️ ID: ${el.id}`);
+//         }
+//         if (el.hasCInClass) {
+//             console.log(`   🎨 Clase: ${el.class}`);
+//         }
+//         if (el.attrsWithC.length > 0) {
+//             console.log(`   🔧 Atributos: ${el.attrsWithC.join(', ')}`);
+//         }
+//     });
+
+//     return results;
+// }
 
 
 module.exports = { visitClickjacking, verifyReto1, verifyReto2, publishFlag };

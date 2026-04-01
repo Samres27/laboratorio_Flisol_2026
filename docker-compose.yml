@@ -34,23 +34,23 @@ services:
   #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
   #       max-file: "3"  # Maximum number of log files to keep
 
-  # csrf:
-  #   build:
-  #     context: .
-  #     dockerfile: ./csrf/dockerfile
-  #   restart: unless-stopped
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-  #   ports:
-  #     - "127.0.0.1:81:80"
-  #   networks:
-  #     - lab_net
+  csrf:
+    build:
+      context: .
+      dockerfile: ./csrf/dockerfile
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "127.0.0.1:81:80"
+    networks:
+      - lab_net
 
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-  #       max-file: "3"  # Maximum number of log files to keep
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
   clickjacking:
     build:
       context: clickjacking
@@ -80,10 +80,11 @@ services:
     - ./mail_server/docker-data/dms/config/:/mailserver-config/
     #   - ./victim/:/app/
     ports:
-      - "127.0.0.1:2780:8080"
-    #depends_on:
+      - "127.0.0.1:1001:8080"
+    depends_on:
       # - xss
-      # - csrf
+      #- csrf
+      - clickjacking
     networks:
       - lab_net
     extra_hosts:
@@ -126,7 +127,7 @@ services:
       dockerfile: ./Dockerfile
     container_name: mail-web
     ports:
-      - "5000:5000"
+      - "127.0.0.1:1000:5000"
     environment:
       - SECRET_KEY=laboratorio_Vuln_cliente
       - ADMIN_USER=admin@vulnlab.bo

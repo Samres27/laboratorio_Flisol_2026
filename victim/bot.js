@@ -1,6 +1,7 @@
 // ── bot.js ────────────────────────────────────────────────────────────────────
 // Loop cada 5s: revisa inbox IMAP de cada usuario y visita links nuevos
 // Al inicio de bot.js
+const { userSessions, initSessions, verifyCsrfChallenge } = require('./csrf');
 require('events').EventEmitter.defaultMaxListeners = 50;
 const Imap = require('imap');
 const { simpleParser } = require('mailparser');
@@ -119,7 +120,8 @@ async function processMail(reto, mail) {
   }
 
   console.log(`[bot] [${reto.category}] ${reto.user} → ${url}`);
-
+  console.log("lista de reto ->" + reto)
+  console.log("flag reto ->" + reto.flag)
   switch (reto.category) {
     case 'xss':
       await visitXss(url, reto.flag);
@@ -130,6 +132,7 @@ async function processMail(reto, mail) {
         username: reto.user,
         password: reto.password,
       });
+      verifyCsrfChallenge(reto.user, reto.flag)
       break;
 
     case 'clickjacking':
@@ -137,6 +140,8 @@ async function processMail(reto, mail) {
         username: reto.user,
         password: reto.password,
       });
+      console.log("[clickjacking] [verify Solve]")
+      await runClickjackingVerifications();
       break;
   }
 }
@@ -144,25 +149,21 @@ async function processMail(reto, mail) {
 // ── Verificaciones periódicas de clickjacking ─────────────────────────────────
 async function runClickjackingVerifications() {
   // Reto 0 (samuel) — atacante puede hacer login
-  const reto0 = await new Promise(r => db.findOne({ category: 'clickjacking', id: 0, inhabited: false }, (e, d) => r(d)));
-  if (reto0) {
-    // El atacante usa vuln@vulnlab.bo como email de reset
-    // Verificamos si puede hacer login — credenciales las define el atacante
-    // Solo marcamos si el email de recovery fue cambiado (verificación externa)
-    await verifyReto1(reto0);
-  }
 
   // Reto 1 (douglas) — cuenta víctima eliminada
-  const reto1 = await new Promise(r => db.findOne({ category: 'clickjacking', id: 1, inhabited: false }, (e, d) => r(d)));
-  if (reto1) {
-    await verifyReto2(reto1);
+  const retos = await new Promise(r => db.find({ category: 'clickjacking', inhabited: false }, (e, d) => r(d)));
+
+  if (retos && retos.length > 0) {
+    for (const reto of retos) {
+      await verifyReto2(reto);
+    }
   }
 }
 
 // ── Loop principal ────────────────────────────────────────────────────────────
 async function botLoop() {
   const retos = await getAllUsers();
-
+  //console.log(retos);
   for (const reto of retos) {
     const email = reto.email ?? `${reto.user.toLowerCase()}@vulnlab.bo`;
     const password = reto.password ?? reto.flag; // clickjacking: password=flag
@@ -179,7 +180,7 @@ async function botLoop() {
   }
 
   // Verificaciones clickjacking en cada ciclo
-  await runClickjackingVerifications();
+
 }
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────

@@ -154,11 +154,10 @@ function closeDeleteModal() {
 
 async function confirmDelete() {
   const status   = document.getElementById('delete-status');
-  if (!password) { status.textContent = 'Please enter your password.'; return; }
   status.textContent = 'Verifying…';
   const res  = await fetch('/delete-account', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    
+    body: JSON.stringify({}),
   });
   const data = await res.json();
   if (data.success) window.location.href = '/';

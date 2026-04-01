@@ -241,7 +241,7 @@ def reset_password(token):
 def delete_account():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-    password = request.json.get('password', '')
+    
     db   = get_db()
     user = db.execute('SELECT * FROM users WHERE id=?', (session['user_id'],)).fetchone()
     songs = db.execute('SELECT filename FROM songs WHERE user_id=?', (session['user_id'],)).fetchall()
