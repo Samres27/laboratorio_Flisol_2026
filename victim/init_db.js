@@ -80,21 +80,21 @@ function initDb() {
   XSS_USERS.forEach((user, i) => {
     const flag  = `Flisol{${makeFlag()}}`;
     const email = `${user.toLowerCase()}@${MAIL_DOMAIN}`;
-    db.insert({ id: i + 1, flag, category: 'xss', inhabited: false, user, email, password: flag });
+    db.insert({ id: i + 1, flag, category: 'xss', inhabited: false, user, email, password: flag,lastVisitedUrl: null,  banned: false });
     createMailAccount(email, flag);
   });
 
   CSRF_USERS.forEach((u, i) => {
     const flag  = `Flisol{${makeFlag()}}`;
     const email = `${u.username}@${MAIL_DOMAIN}`;
-    db.insert({ id: i, flag, category: 'csrf', inhabited: false, user: u.username, email, password: u.password });
+    db.insert({ id: i, flag, category: 'csrf', inhabited: false, user: u.username, email, password: u.password,lastVisitedUrl: null,  banned: false   });
     createMailAccount(email, u.password);
   });
 
   CLICKJACKING_USERS.forEach((user, i) => {
     const flag  = `Flisol{${makeFlag()}}`;
     const email = `${user}@${MAIL_DOMAIN}`;
-    db.insert({ id: i, flag, category: 'clickjacking', inhabited: false, user, email, password: flag });
+    db.insert({ id: i, flag, category: 'clickjacking', inhabited: false, user, email, password: flag,lastVisitedUrl: null,  banned: false });
     createMailAccount(email, flag);
   });
 

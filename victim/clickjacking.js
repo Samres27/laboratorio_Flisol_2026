@@ -61,12 +61,12 @@ async function loginSoundNest(page, username, password) {
 async function publishFlag(sessionValue, flag, title, isPrivate = true) {
     const mp3 = silentMp3();
     //console.log(`[publishFlag] mp3 type: ${typeof mp3} | isBuffer: ${Buffer.isBuffer(mp3)} | size: ${mp3.length}`);
-    
+
     const form = new FormData();
     form.append('title', title);
     form.append('artist', flag);
     form.append('audio', mp3, { filename: 'flag.mp3', contentType: 'audio/mpeg' });
-    
+
     if (isPrivate) {
         form.append('is_private', 'on');
     }
@@ -84,8 +84,9 @@ async function publishFlag(sessionValue, flag, title, isPrivate = true) {
 // ── visitClickjacking ─────────────────────────────────────────────────────────
 // site: URL del PoC html (la página del atacante)
 // sessionData: { username, password } de la víctima
-const { resolveUrl } = require('./utils');
+const { resolveUrl, banUrl, searchBanUrl, getBaseUrl } = require('./utils');
 
+const { db } = require('./init_db');
 
 async function visitClickjacking(site, flag, sessionData) {
     const resolvedSite = resolveUrl(site);
@@ -108,19 +109,29 @@ async function visitClickjacking(site, flag, sessionData) {
         const savedCookies = await page.cookies(TARGET);
         const sessionVal = savedCookies.find(c => c.name === 'session');
         const cookieHeader = sessionVal ? `session=${sessionVal.value}` : '';
+        let path = null
 
         // 3. Interceptor DESPUÉS del login
         await page.setRequestInterception(true);
-        page.on('request', (req) => {
+        page.on('request', async (req) => {          // ✅ async aquí
             const intercepted = resolveUrl(req.url());
+
+            if (path) {
+                path = getBaseUrl(intercepted, 1);  // ✅ resolvedSite, no resolvedUrl
+
+                const exists = await searchBanUrl(db, path);  // ✅ await + definir exists
+                if (exists) {
+                    console.log("[XSS] url baneada");
+                    req.abort();                     // ✅ req.abort(), no return null
+                    return;
+                } else {
+                    console.log("[XSS] correct url");
+                }
+            }
 
             const extraHeaders = {};
             if (intercepted.includes('clickjacking') && cookieHeader) {
                 extraHeaders['Cookie'] = cookieHeader;
-            }
-
-            if (intercepted !== req.url()) {
-                //console.log(`[intercept] ${req.url()} → ${intercepted}`);
             }
 
             req.continue({ url: intercepted, headers: { ...req.headers(), ...extraHeaders } });
@@ -196,7 +207,7 @@ async function visitClickjacking(site, flag, sessionData) {
         await page.screenshot({ path: '/tmp/after_click.png' });
         //console.log(`[clickjacking] Screenshots en /tmp/poc.png y /tmp/after_click.png`);
 
-
+        return path
 
     } catch (e) {
         console.warn(`[clickjacking] Error: ${e.message}`);
@@ -296,7 +307,7 @@ async function verifyReto2(reto) {
 
             if (sessionToUse) {
                 //console.log(`[verifyReto2] Publicando flag para ${reto.user}...`);
-               await publishFlag(sessionToUse, reto.flag, `Clickjacking Reto 2 — ${reto.user}`, false);
+                await publishFlag(sessionToUse, reto.flag, `Clickjacking Reto 2 — ${reto.user}`, false);
                 ////console.log(`[verifyReto2] ✅ Flag publicada`);
             } else {
                 console.warn(`[verifyReto2] ❌ No se pudo obtener sesión — flag no publicada`);
@@ -320,8 +331,8 @@ async function registerTempUser() {
     await fetch(`${TARGET}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ 
-            username: tempUser, 
+        body: new URLSearchParams({
+            username: tempUser,
             password: tempPass,
             email: `${tempUser}@vulnlab.bo`,
             confirm_password: tempPass,

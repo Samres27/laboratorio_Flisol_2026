@@ -19,6 +19,7 @@ const { db } = require('./init_db');
 // Trackear último ID visto por usuario para no reprocesar
 const lastSeenId = new Map(); // email → msgId
 
+
 // ── Leer último email del inbox via IMAP ──────────────────────────────────────
 function fetchLatestMail(email, password) {
   return new Promise((resolve) => {
@@ -53,7 +54,6 @@ function fetchLatestMail(email, password) {
 
         let mail = null;
 
-        // DESPUÉS
         let parsePromise = Promise.resolve();
 
         fetch.on('message', (msg) => {
@@ -84,17 +84,9 @@ function fetchLatestMail(email, password) {
 
 // ── Extraer primera URL del body del email ────────────────────────────────────
 function extractUrl(mail) {
-  // 1. Extraemos el contenido (asegurándonos de que 'mail' exista)
   const content = mail?.text ?? mail?.html ?? '';
-
-  // 2. Limpiamos saltos de línea Y posibles caracteres de escape de email (como '=')
-  // Muchos correos usan Quoted-Printable donde los saltos de línea se marcan con '='
   const cleanContent = content.replace(/[\r\n]+/g, ' ').replace(/=\s/g, '');
-
-  // 3. Ejecutamos el match
   const match = cleanContent.match(/https?:\/\/[^\s"<>]+/);
-
-  // 4. Retornamos el resultado limpio
   return match ? match[0].trim() : null;
 }
 
@@ -122,35 +114,47 @@ async function processMail(reto, mail) {
   console.log(`[bot] [${reto.category}] ${reto.user} → ${url}`);
   console.log("lista de reto ->" + reto)
   console.log("flag reto ->" + reto.flag)
+
   switch (reto.category) {
-    case 'xss':
-      await visitXss(url, reto.flag);
+    case 'xss': {
+      const lastUrl = await visitXss(url, reto.flag);
+      if (lastUrl) {
+        db.update({ _id: reto._id }, { $set: { lastVisitedUrl: lastUrl } }, {});
+        console.log(`[xss] lastVisitedUrl guardada: ${lastUrl}`);
+      }
       break;
+    }
 
-    case 'csrf':
-      await visitCsrf(url, reto.flag, {
+    case 'csrf': {
+      const lastUrl2 = await visitCsrf(url, reto.flag, {
         username: reto.user,
         password: reto.password,
       });
-      verifyCsrfChallenge(reto.user, reto.flag)
+      verifyCsrfChallenge(reto.user, reto.flag);
+      if (lastUrl2) {
+        db.update({ _id: reto._id }, { $set: { lastVisitedUrl: lastUrl2 } }, {});
+        console.log(`[csrf] lastVisitedUrl guardada: ${lastUrl2}`);
+      }
       break;
+    }
 
-    case 'clickjacking':
-      await visitClickjacking(url, reto.flag, {
+    case 'clickjacking': {
+      const lastUrl3 = await visitClickjacking(url, reto.flag, {
         username: reto.user,
         password: reto.password,
       });
-      console.log("[clickjacking] [verify Solve]")
+      if (lastUrl3) {
+        db.update({ _id: reto._id }, { $set: { lastVisitedUrl: lastUrl3 } }, {});
+        console.log(`[clickjacking] lastVisitedUrl guardada: ${lastUrl3}`);
+      }
       await runClickjackingVerifications();
       break;
+    }
   }
 }
 
 // ── Verificaciones periódicas de clickjacking ─────────────────────────────────
 async function runClickjackingVerifications() {
-  // Reto 0 (samuel) — atacante puede hacer login
-
-  // Reto 1 (douglas) — cuenta víctima eliminada
   const retos = await new Promise(r => db.find({ category: 'clickjacking', inhabited: false }, (e, d) => r(d)));
 
   if (retos && retos.length > 0) {
@@ -163,7 +167,6 @@ async function runClickjackingVerifications() {
 // ── Loop principal ────────────────────────────────────────────────────────────
 async function botLoop() {
   const retos = await getAllUsers();
-  //console.log(retos);
   for (const reto of retos) {
     const email = reto.email ?? `${reto.user.toLowerCase()}@vulnlab.bo`;
     const password = reto.password ?? reto.flag; // clickjacking: password=flag
@@ -178,9 +181,6 @@ async function botLoop() {
     lastSeenId.set(key, mail.uid);
     await processMail(reto, mail);
   }
-
-  // Verificaciones clickjacking en cada ciclo
-
 }
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────

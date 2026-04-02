@@ -1,10 +1,19 @@
 
-const { resolveUrl } = require('./utils');
+const { resolveUrl, banUrl, searchBanUrl, getBaseUrl } = require('./utils');
 const puppeteer = require('puppeteer');
- 
+const { db } = require('./init_db');
+let urll
 async function visitXss(url, flag) {
   const resolvedUrl = resolveUrl(url);
   console.log(`[xss] Visitando: ${resolvedUrl}`);
+  path = getBaseUrl(resolvedUrl, 1)
+  const exists = await searchBanUrl(db, path);
+  if (exists) {
+    console.log("[XSS] url baneada")
+    return null;
+  } else {
+    console.log("[XSS] correct url")
+  }
   let browser;
   try {
     browser = await puppeteer.launch({
@@ -12,7 +21,7 @@ async function visitXss(url, flag) {
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     const page = await browser.newPage();
- 
+
     await page.setRequestInterception(true);
     page.on('request', (req) => {
       const intercepted = resolveUrl(req.url());
@@ -21,12 +30,12 @@ async function visitXss(url, flag) {
       }
       req.continue({ url: intercepted });
     });
- 
+
     await page.setExtraHTTPHeaders({ 'X-Flag': flag });
- 
+
     // 1. Activar dominio xss primero para poder setear la cookie
     await page.goto('http://xss', { waitUntil: 'domcontentloaded', timeout: 10000 });
- 
+
     // 2. Setear cookie con dominio xss activo
     await page.setCookie({
       name: 'flagFlisol', value: flag,
@@ -34,17 +43,21 @@ async function visitXss(url, flag) {
       path: '/', secure: false,
     });
     console.log(`[xss] cookie seteada en dominio: xss → ${flag}`);
- 
+
     // 3. Visitar la URL del atacante — si hace redirect a xss, la cookie ya está
     const res = await page.goto(resolvedUrl, { waitUntil: 'networkidle2', timeout: 10000 });
     console.log(`[xss] ${resolvedUrl} → ${res?.status()}`);
- 
+
     await new Promise(r => setTimeout(r, 5000));
+    return  path ;
   } catch (e) {
     console.warn(`[xss] Error: ${e.message}`);
   } finally {
     await browser?.close();
   }
 }
- 
-module.exports = { visitXss };
+function URLBan(user,category, url) {
+  path = getBaseUrl(url, 1)
+  banUrl(db,path, category, user)
+}
+module.exports = { visitXss, URLBan };

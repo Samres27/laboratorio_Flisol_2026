@@ -7,6 +7,7 @@ const Datastore = require('nedb');
 
 const { userSessions, initSessions, verifyCsrfChallenge } = require('./csrf');
 const { setupVictim } = require('./clickjacking_setup');
+const { URLBan } = require('./xss');
 
 const app = express();
 const port = 8080;
@@ -17,7 +18,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 const { db } = require('./init_db');
-const rutas = new Datastore({ filename: 'rutas.db', autoload: true });
+
 
 // ── Vistas ────────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.render('main'));
@@ -46,37 +47,21 @@ app.post('/api/check-flag', (req, res) => {
   db.findOne({ flag, category, id: Number(challengeId), inhabited: false }, (err, chal) => {
     if (!chal) {
       return res.json({ success: false, mensaje: 'Flag incorrecta. ¡Sigue intentando!' });
-    } else {
-      db.update({ _id: chal._id }, { $set: { inhabited: true } }, {}, () => {
-        rutas.insert({ flag, challengeId, path: null });
-      });
-      res.json({ success: true, mensaje: `¡Correcto! Completaste el reto de ${chal.user}` });
     }
+
+    const urlToBan = chal.lastVisitedUrl; // leer antes de limpiar
+    db.update(
+      { _id: chal._id },
+      { $set: { inhabited: true, lastVisitedUrl: null } }, // limpiar al mismo tiempo
+      {},
+      () => {
+        if (urlToBan) URLBan(urlToBan, chal.user, category);
+      }
+    );
+
+    res.json({ success: true, mensaje: `¡Correcto! Completaste el reto de ${chal.user}` });
   });
 });
-
-// ── Mail / visit (XSS y CSRF mantienen el endpoint) ──────────────────────────
-// app.post('/api/mail', async (req, res) => {
-//   const { userId, body, category } = req.body;
-
-//   if (Number(userId) === 5) return res.status(202).json({ mensaje: 'ocupado' });
-
-//   const urlRegex    = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/ig;
-//   const detectedUrls = body?.match(urlRegex);
-
-//   if (!detectedUrls) return res.status(400).json({ mensaje: 'no se detectó una URL' });
-//   if (['127.0.0.1', 'localhost'].some(h => detectedUrls[0].includes(h)))
-//     return res.status(400).json({ mensaje: 'host no válido' });
-
-//   const chal = await new Promise(resolve =>
-//     db.findOne({ category, id: Number(userId), inhabited: false }, (err, doc) => resolve(doc ?? null))
-//   );
-//   if (!chal) return res.status(404).json({ mensaje: 'challenge no encontrado' });
-
-//   if (category === 'csrf') await verifyCsrfChallenge(chal.user, chal.flag);
-
-//   res.status(200).json({ mensaje: 'ok' });
-// });
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────
 app.listen(port, async () => {

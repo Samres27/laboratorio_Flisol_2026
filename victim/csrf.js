@@ -242,71 +242,11 @@ async function initSessions(db) {
 
   console.log('[csrf] Posts de retos createds');
 }
-
+const { db } = require('./init_db');
 // ── visitCsrf — wrapper para bot.js ──────────────────────────────────────────
 const puppeteer = require('puppeteer');
+const { resolveUrl, banUrl, searchBanUrl, getBaseUrl } = require('./utils');
 
-const { resolveUrl } = require('./utils');
-
-// async function visitCsrf(url, flag, sessionData) {
-//   const resolvedUrl = resolveUrl(url);
-//   console.log(`[csrf] Visitando: ${resolvedUrl}`);
-//   let browser;
-//   try {
-//     const extraHeaders = {};
-//     browser = await puppeteer.launch({
-//       headless: 'new',
-//       args: ['--no-sandbox', '--disable-setuid-sandbox',
-//         '--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure'],
-//     });
-//     const page = await browser.newPage();
-//     const saved = userSessions.get(sessionData?.username);
-//     // Interceptar requests internas (payloads CSRF)
-//     const cookieParts = [`session=${sessionData.session}`];
-//         if (sessionData.delete_token) {
-//             cookieParts.push(`delete_token=${sessionData.delete_token}`);
-//         }
-//         extraHeaders['Cookie'] = cookieParts.join('; ');
-//         console.log(`[victim] Inyectando cookies en request a csrf`);
-//     await page.setRequestInterception(true);
-//     page.on('request', (req) => {
-//       const intercepted = resolveUrl(req.url());
-//       if (intercepted !== req.url()) {
-//         console.log(`[intercept-csrf] ${req.url()} → ${intercepted}`);
-//       }
-
-//       req.continue({ url: intercepted, headers: { ...req.headers(), ...extraHeaders } });
-//     });
-
-
-//     if (saved?.session) {
-//       for (const domain of ['csrf', 'localhost', '127.0.0.1']) {
-//         await page.setCookie({ name: 'session', value: saved.session, domain, path: '/', secure: false, sameSite: 'Lax' });
-//         await page.setCookie({ name: 'flagFlisol', value: flag, domain, path: '/', secure: false, sameSite: 'Lax' });
-//       }
-//     }
-//      // 1. Activar dominio xss primero para poder setear la cookie
-//     await page.goto('http://csrf', { waitUntil: 'domcontentloaded', timeout: 10000 });
-
-//     // 2. Setear cookie con dominio xss activo
-//     await page.setCookie({
-//       name: 'flagFlisol', value: flag,
-//       domain: 'csrf',
-//       path: '/', secure: false,
-//     });
-//     console.log(`[victim] cookie seteada en dominio: csrf → ${extraHeaders}`);
-
-//     // 3. Visitar la URL del atacante — si hace redirect a xss, la cookie ya está
-
-//     const res = await page.goto(resolvedUrl, { waitUntil: 'networkidle2', timeout: 10000 });
-//     console.log(`[csrf] ${resolvedUrl} → ${res?.status()}`);
-//     await new Promise(r => setTimeout(r, 5000));
-//   } catch (e) {
-//     console.warn(`[csrf] Error: ${e.message}`);
-//   } finally {
-//     await browser?.close();
-//   }
-// }
 
 
 async function visitCsrf(url, flag, sessionData) {
@@ -355,9 +295,23 @@ async function visitCsrf(url, flag, sessionData) {
 
     // 5. Activar interceptor con cookies inyectadas en requests a csrf
     await page.setRequestInterception(true);
-    page.on('request', (req) => {
+    let path = null
+    const exists = await searchBanUrl(db, path);
+    page.on('request', async (req) => {  // 👈 async aquí
       const intercepted = resolveUrl(req.url());
       const extraHeaders = {};
+
+      if (!path) {
+        path = getBaseUrl(intercepted, 1);
+        const exists = await searchBanUrl(db, path);  // ✅ ahora funciona
+        if (exists) {
+          console.log("[CSRF] url baneada");
+          req.abort();  // 👈 también deberías abortar la request si está baneada
+          return;
+        } else {
+          console.log("[CSRF] correct url");
+        }
+      }
 
       if (intercepted.includes('csrf') && cookieHeader) {
         extraHeaders['Cookie'] = cookieHeader;
@@ -370,11 +324,11 @@ async function visitCsrf(url, flag, sessionData) {
 
       req.continue({ url: intercepted, headers: { ...req.headers(), ...extraHeaders } });
     });
-
     // 6. Visitar URL del atacante
     const res = await page.goto(resolvedUrl, { waitUntil: 'networkidle2', timeout: 10000 });
     console.log(`[csrf] ${resolvedUrl} → ${res?.status()}`);
     await new Promise(r => setTimeout(r, 5000));
+    return path
   } catch (e) {
     console.warn(`[csrf] Error: ${e.message}`);
   } finally {
