@@ -1,23 +1,15 @@
-// ── csrf.js ─────────────────────────────────loginAndSaveSessionc────────────────────────────────
-// Módulo que maneja sesiones, setup de posts y verificación de retos CSRF
-
+// ── csrf.js ───────────────────────────────────────────────────────────────────
 const FLASK_URL = 'http://csrf';
 
 const userSessions = new Map();
-// { username: { session, delete_token } }
 
 const USERS = [
   { username: 'mrodriguez', password: 'pollo1234' },
   { username: 'lperez', password: 'casa1234' },
   { username: 'agarcia', password: 'prado1234' },
-
 ];
 
-
-
-
-// ── Login ────────────────────────────────────────────────────────────────────
-
+// ── Login ─────────────────────────────────────────────────────────────────────
 async function loginAndSaveSession(username, password) {
   const res = await fetch(`${FLASK_URL}/login`, {
     method: 'POST',
@@ -39,7 +31,6 @@ async function loginAndSaveSession(username, password) {
     return;
   }
 
-  // ── Visitar my-posts para forzar generación de delete_token ───
   const res2 = await fetch(`${FLASK_URL}/my-posts`, {
     headers: { 'Cookie': `session=${cookies['session']}` },
   });
@@ -52,7 +43,6 @@ async function loginAndSaveSession(username, password) {
   }
 
   console.log(`[csrf] Cookies de ${username}:`, cookies);
-
   userSessions.set(username, {
     session: cookies['session'],
     delete_token: cookies['delete_token'] ?? null,
@@ -60,40 +50,33 @@ async function loginAndSaveSession(username, password) {
     password,
     resuelto: false,
   });
-
   console.log(`[csrf] Sesión guardada para ${username} — delete_token: ${cookies['delete_token'] ?? 'null'}`);
 }
 
-// ── CSRF token ───────────────────────────────────────────────────────────────
-
+// ── CSRF token ────────────────────────────────────────────────────────────────
 async function getCsrfToken(username) {
   const userData = userSessions.get(username);
   if (!userData?.session) return '';
-
   const res = await fetch(`${FLASK_URL}/post/create`, {
     headers: { 'Cookie': `session=${userData.session}` },
   });
-
   const html = await res.text();
   const match = html.match(/name="csrf_token"\s+value="([^"]+)"/);
   return match ? match[1] : '';
 }
 
-// ── Crear post con la flag en el body ────────────────────────────────────────
-
+// ── Crear post ────────────────────────────────────────────────────────────────
 async function createPostForUser(username, flag, publishe = 0) {
   const userData = userSessions.get(username);
   if (!userData?.session) {
     console.warn(`[csrf] Sin sesión para ${username}, no se puede crear post`);
     return;
   }
-
   const csrfToken = await getCsrfToken(username);
   if (!csrfToken) {
     console.warn(`[csrf] No se pudo obtener csrf_token para ${username}`);
     return;
   }
-
   const res = await fetch(`${FLASK_URL}/post/create`, {
     method: 'POST',
     headers: {
@@ -102,23 +85,19 @@ async function createPostForUser(username, flag, publishe = 0) {
     },
     body: new URLSearchParams({
       title: `Post secreto de ${username}`,
-      body: flag,   // la flag va en el contenido del post
+      body: flag,
       csrf_token: csrfToken,
-      published: publishe
+      published: publishe,
     }),
     redirect: 'manual',
   });
-
   console.log(`[csrf] Post created para ${username} → HTTP ${res.status}`);
 }
 
-// ── Verificadores ────────────────────────────────────────────────────────────
-
-// lperez  → delete: el post con la flag NO debe aparecer en /my-posts
+// ── Verificadores ─────────────────────────────────────────────────────────────
 async function verifyDelete(flag, user) {
   let userData = userSessions.get(user);
   console.log("[verifyDelete] user:" + user + " flag:" + flag);
-
   if (!userData?.session) {
     console.warn(`[verifyDelete] Sin sesión para ${user}, reintentando...`);
     const u = USERS.find(u => u.username === user);
@@ -126,112 +105,70 @@ async function verifyDelete(flag, user) {
     userData = userSessions.get(user);
     if (!userData?.session) return false;
   }
-
   const res = await fetch(`${FLASK_URL}/my-posts`, {
     headers: { 'Cookie': `session=${userData.session}` },
   });
   const html = await res.text();
-
   console.log(`[verifyDelete] ¿flag en my-posts?: ${html.includes(flag)}`);
-
   if (!userData.resuelto && !html.includes(flag)) {
     console.log("[verifyDelete] Resuelto: " + user);
     userSessions.set(user, { ...userData, resuelto: true });
-    await createPostForUser(user, flag, 1); // ← await
+    await createPostForUser(user, flag, 1);
     return true;
-  } else {
-    console.log("[verifyDelete] Sin resolver: " + user);
-    return false; // ← explícito
   }
+  console.log("[verifyDelete] Sin resolver: " + user);
+  return false;
 }
 
-// mrodriguez → create: un post con la flag como título en /feed público
-// async function verifyCreate(flag) {
-//   const userData = userSessions.get('mrodriguez');
-//   console.log("[verifyCreate]: revisando sesion")
-//   console.log("[verifyCreate]:"+userData,"[verifyCreate]:"+userSessions)
-//   if (!userData?.session) return false;
-
-//   const res = await fetch(`${FLASK_URL}/my-posts`, {
-//     headers: { 'Cookie': `session=${userData.session}` },
-//   });
-//   console.log("[verifyCreate]: revisando sitio")
-//   const html = await res.text();
-
-//   if (!userData.resuelto && html.includes('created:')){
-//     console.log("[verifyCreate]:Resuelto")
-//     const existing = userSessions.get("mrodriguez") || {};
-//     userSessions.set("mrodriguez", { ...existing, resuelto:true });
-//     createPostForUser('mrodriguez', flag,1)
-//   }else{
-//     console.log("[verifyCreate]:sin resolver")
-//     return false
-//   }
-// }
 async function verifyCreate(flag) {
   const userData = userSessions.get('mrodriguez');
   console.log("[verifyCreate]: revisando sesion");
-
-  // Reintento de sesión si no existe
   if (!userData?.session) {
     console.warn('[verifyCreate]: sin sesión, reintentando login...');
     await loginAndSaveSession('mrodriguez', 'pollo1234');
     const retried = userSessions.get('mrodriguez');
     if (!retried?.session) return false;
   }
-
   const fresh = userSessions.get('mrodriguez');
   const res = await fetch(`${FLASK_URL}/my-posts`, {
     headers: { 'Cookie': `session=${fresh.session}` },
   });
   console.log("[verifyCreate]: revisando sitio");
   const html = await res.text();
-
   if (!fresh.resuelto && html.includes('created:')) {
     console.log("[verifyCreate]: Resuelto");
     userSessions.set("mrodriguez", { ...fresh, resuelto: true });
-    await createPostForUser('mrodriguez', flag, 1); // ← await
-    return true;                                    // ← return true
-  } else {
-    console.log("[verifyCreate]: sin resolver");
-    return false;
+    await createPostForUser('mrodriguez', flag, 1);
+    return true;
   }
+  console.log("[verifyCreate]: sin resolver");
+  return false;
 }
-// ── Verificador unificado ────────────────────────────────────────────────────
 
 async function verifyCsrfChallenge(user, flag) {
-  console.log("verificando reto para: " + user + "flag:" + flag)
+  console.log("verificando reto para: " + user + " flag:" + flag);
   switch (user) {
     case 'lperez':
     case 'agarcia': return await verifyDelete(flag, user);
     case 'mrodriguez': return await verifyCreate(flag);
-    default: return true; // reto sin verificación especial
+    default: return true;
   }
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
-// db se pasa desde server.js para consultar las flags de retos.db
-
+// ── Init ──────────────────────────────────────────────────────────────────────
 async function initSessions(db) {
   console.log('[csrf] Iniciando login de usuarios...');
   await Promise.all(USERS.map(u => loginAndSaveSession(u.username, u.password)));
-
-  // Verificar que todas las sesiones se crearon
   for (const u of USERS) {
     if (!userSessions.get(u.username)?.session) {
       console.warn(`[csrf] Reintentando login para ${u.username}...`);
       await loginAndSaveSession(u.username, u.password);
     }
   }
-
   console.log(`[csrf] Sesiones listas: ${[...userSessions.keys()].join(', ')}`);
-  // Obtener flags desde retos.db y crear los posts
   const getFlag = (user) => new Promise((resolve) => {
     db.findOne({ category: 'csrf', user }, (err, doc) => resolve(doc?.flag ?? null));
   });
-
-
-
   [flagMrodriguez, flagLperez, flagAgarcia] = await Promise.all([
     getFlag('mrodriguez'),
     getFlag('lperez'),
@@ -239,19 +176,19 @@ async function initSessions(db) {
   ]);
   if (flagLperez) await createPostForUser('lperez', flagLperez);
   if (flagAgarcia) await createPostForUser('agarcia', flagAgarcia);
-
-  console.log('[csrf] Posts de retos createds');
+  console.log('[csrf] Posts de retos creados');
 }
-const { db } = require('./init_db');
-// ── visitCsrf — wrapper para bot.js ──────────────────────────────────────────
+
+// ── visitCsrf ─────────────────────────────────────────────────────────────────
 const puppeteer = require('puppeteer');
-const { resolveUrl, banUrl, searchBanUrl, getBaseUrl } = require('./utils');
-
-
+const { resolveUrl, getBaseUrl } = require('./utils');
+const { isBanned } = require('./banned_urls');
+const { db } = require('./init_db');
 
 async function visitCsrf(url, flag, sessionData) {
   const resolvedUrl = resolveUrl(url);
   console.log(`[csrf] Visitando: ${resolvedUrl}`);
+
   let browser;
   try {
     browser = await puppeteer.launch({
@@ -261,7 +198,7 @@ async function visitCsrf(url, flag, sessionData) {
     });
     const page = await browser.newPage();
 
-    // 1. Login directo con Puppeteer
+    // 1. Login
     console.log(`[csrf] Haciendo login para ${sessionData.username}`);
     await page.goto('http://csrf/login', { waitUntil: 'networkidle2', timeout: 10000 });
     await page.type('input[name="username"]', sessionData.username);
@@ -276,41 +213,42 @@ async function visitCsrf(url, flag, sessionData) {
     await page.goto('http://csrf/my-posts', { waitUntil: 'networkidle2', timeout: 10000 });
     console.log(`[csrf] delete_token generado para ${sessionData.username}`);
 
-    // 3. Guardar cookies ANTES de activar el interceptor
+    // 3. Guardar cookies
     const savedCookies = await page.cookies('http://csrf');
     const sessionCookie = savedCookies.find(c => c.name === 'session');
     const deleteTokenCookie = savedCookies.find(c => c.name === 'delete_token');
-
     const cookieParts = [];
     if (sessionCookie) cookieParts.push(`session=${sessionCookie.value}`);
     if (deleteTokenCookie) cookieParts.push(`delete_token=${deleteTokenCookie.value}`);
     const cookieHeader = cookieParts.join('; ');
     console.log(`[csrf] Cookies capturadas: ${cookieHeader}`);
 
-    // 4. Setear flagFlisol en dominio csrf
+    // 4. Setear flagFlisol
     await page.setCookie({
       name: 'flagFlisol', value: flag,
       domain: 'csrf', path: '/', secure: false,
     });
 
-    // 5. Activar interceptor con cookies inyectadas en requests a csrf
+    // 5. Interceptor — chequeo de baneo en el primer request hacia csrf
     await page.setRequestInterception(true);
-    let path = null
-    const exists = await searchBanUrl(db, path);
-    page.on('request', async (req) => {  // 👈 async aquí
+    let basePath = null;
+    let csrfChecked = false;
+
+    page.on('request', async (req) => {
       const intercepted = resolveUrl(req.url());
       const extraHeaders = {};
 
-      if (!path) {
-        path = getBaseUrl(intercepted, 1);
-        const exists = await searchBanUrl(db, path);  // ✅ ahora funciona
-        if (exists) {
-          console.log("[CSRF] url baneada");
-          req.abort();  // 👈 también deberías abortar la request si está baneada
+      // Primer request que apunta a csrf → chequear baneo
+      if (!csrfChecked && intercepted.includes('csrf')) {
+        csrfChecked = true;
+        basePath = getBaseUrl(intercepted, 1);
+        const banned = await isBanned(basePath);
+        if (banned) {
+          console.log(`[csrf] url baneada: ${basePath}`);
+          req.abort();
           return;
-        } else {
-          console.log("[CSRF] correct url");
         }
+        console.log(`[csrf] url correcta: ${basePath}`);
       }
 
       if (intercepted.includes('csrf') && cookieHeader) {
@@ -324,11 +262,12 @@ async function visitCsrf(url, flag, sessionData) {
 
       req.continue({ url: intercepted, headers: { ...req.headers(), ...extraHeaders } });
     });
+
     // 6. Visitar URL del atacante
     const res = await page.goto(resolvedUrl, { waitUntil: 'networkidle2', timeout: 10000 });
     console.log(`[csrf] ${resolvedUrl} → ${res?.status()}`);
     await new Promise(r => setTimeout(r, 5000));
-    return path
+    return basePath;
   } catch (e) {
     console.warn(`[csrf] Error: ${e.message}`);
   } finally {
@@ -336,9 +275,7 @@ async function visitCsrf(url, flag, sessionData) {
   }
 }
 
-
-// ── Exports ──────────────────────────────────────────────────────────────────
-
+// ── Exports ───────────────────────────────────────────────────────────────────
 module.exports = {
   userSessions,
   initSessions,

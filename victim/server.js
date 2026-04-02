@@ -7,7 +7,7 @@ const Datastore = require('nedb');
 
 const { userSessions, initSessions, verifyCsrfChallenge } = require('./csrf');
 const { setupVictim } = require('./clickjacking_setup');
-const { URLBan } = require('./xss');
+const { banUrl } = require('./banned_urls');
 
 const app = express();
 const port = 8080;
@@ -44,18 +44,18 @@ app.get('/clickjacking', (req, res) => {
 // ── Check flag ────────────────────────────────────────────────────────────────
 app.post('/api/check-flag', (req, res) => {
   const { category, challengeId, flag } = req.body;
-  db.findOne({ flag, category, id: Number(challengeId), inhabited: false }, (err, chal) => {
+  db.findOne({ flag, category, id: Number(challengeId), inhabited: false, lastVisitedUrl:{ $ne: null }  }, (err, chal) => {
     if (!chal) {
       return res.json({ success: false, mensaje: 'Flag incorrecta. ¡Sigue intentando!' });
     }
-
-    const urlToBan = chal.lastVisitedUrl; // leer antes de limpiar
+    console.log("baneado esta url porque se ejecuto: "+chal.lastVisitedUrl)
+    const urlToBan = chal.lastVisitedUrl;
     db.update(
       { _id: chal._id },
-      { $set: { inhabited: true, lastVisitedUrl: null } }, // limpiar al mismo tiempo
+      { $set: { inhabited: true, banned: true } },
       {},
       () => {
-        if (urlToBan) URLBan(urlToBan, chal.user, category);
+        if (urlToBan) banUrl(urlToBan);
       }
     );
 

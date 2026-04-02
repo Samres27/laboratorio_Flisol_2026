@@ -1,19 +1,19 @@
-
-const { resolveUrl, banUrl, searchBanUrl, getBaseUrl } = require('./utils');
+const { resolveUrl, getBaseUrl } = require('./utils');
+const { isBanned } = require('./banned_urls');
 const puppeteer = require('puppeteer');
-const { db } = require('./init_db');
-let urll
+
 async function visitXss(url, flag) {
   const resolvedUrl = resolveUrl(url);
   console.log(`[xss] Visitando: ${resolvedUrl}`);
-  path = getBaseUrl(resolvedUrl, 1)
-  const exists = await searchBanUrl(db, path);
-  if (exists) {
-    console.log("[XSS] url baneada")
+
+  const path = getBaseUrl(resolvedUrl, 1);
+  const banned = await isBanned(path);
+  if (banned) {
+    console.log("[xss] url baneada");
     return null;
-  } else {
-    console.log("[XSS] correct url")
   }
+  console.log("[xss] url correcta");
+
   let browser;
   try {
     browser = await puppeteer.launch({
@@ -44,20 +44,17 @@ async function visitXss(url, flag) {
     });
     console.log(`[xss] cookie seteada en dominio: xss → ${flag}`);
 
-    // 3. Visitar la URL del atacante — si hace redirect a xss, la cookie ya está
+    // 3. Visitar la URL del atacante
     const res = await page.goto(resolvedUrl, { waitUntil: 'networkidle2', timeout: 10000 });
     console.log(`[xss] ${resolvedUrl} → ${res?.status()}`);
 
     await new Promise(r => setTimeout(r, 5000));
-    return  path ;
+    return path;
   } catch (e) {
     console.warn(`[xss] Error: ${e.message}`);
   } finally {
     await browser?.close();
   }
 }
-function URLBan(user,category, url) {
-  path = getBaseUrl(url, 1)
-  banUrl(db,path, category, user)
-}
-module.exports = { visitXss, URLBan };
+
+module.exports = { visitXss };
