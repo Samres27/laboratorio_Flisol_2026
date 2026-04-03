@@ -95,14 +95,6 @@ async function visitClickjacking(site, flag, sessionData) {
             // Primer request que apunta a clickjacking → chequear baneo
             if (!clickjackingChecked && intercepted.includes('clickjacking')) {
                 clickjackingChecked = true;
-                basePath = getBaseUrl(intercepted, 1);
-                const banned = await isBanned(basePath);
-                if (banned) {
-                    console.log(`[clickjacking] url baneada: ${basePath}`);
-                    req.abort();
-                    return;
-                }
-                console.log(`[clickjacking] url correcta: ${basePath}`);
             }
 
             if (intercepted.includes('clickjacking') && cookieHeader) {

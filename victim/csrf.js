@@ -241,7 +241,7 @@ async function visitCsrf(url, flag, sessionData) {
       // Primer request que apunta a csrf → chequear baneo
       if (!csrfChecked && intercepted.includes('csrf')) {
         csrfChecked = true;
-        basePath = getBaseUrl(intercepted, 1);
+        basePath = getBaseUrl(intercepted, 2);
         const banned = await isBanned(basePath);
         if (banned) {
           console.log(`[csrf] url baneada: ${basePath}`);
