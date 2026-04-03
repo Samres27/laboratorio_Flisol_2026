@@ -52,22 +52,22 @@ services:
       options:
         max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
         max-file: "3"  # Maximum number of log files to keep
-  # clickjacking:
-  #   build:
-  #     context: clickjacking
-  #     dockerfile: ./dockerfile
-  #   restart: unless-stopped
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-  #   ports:
-  #     - "127.0.0.1:82:443"
-  #   networks:
-  #     - lab_net
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-  #       max-file: "3"  # Maximum number of log files to keep
+  clickjacking:
+    build:
+      context: clickjacking
+      dockerfile: ./dockerfile
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "127.0.0.1:82:443"
+    networks:
+      - lab_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+        max-file: "3"  # Maximum number of log files to keep
   victim:
     build:
       context: ./victim
@@ -78,13 +78,13 @@ services:
       - VISIT_INTERVAL=1
     volumes:
     - ./mail_server/docker-data/dms/config/:/mailserver-config/
-    #- victim-data:/app/
+    - victim-data:/app/data/
     ports:
       - "127.0.0.1:1001:8080"
     depends_on:
       - xss
-      #- csrf
-      #- clickjacking
+      - csrf
+      - clickjacking
     networks:
       - lab_net
     
@@ -112,7 +112,6 @@ services:
       - mail-data:/var/mail/
       - mail-state:/var/mail-state/
       - mail-logs:/var/log/mail/
-      # CORREGIDO: Usa la misma ruta que la web
       - ./mail_server/docker-data/dms/config/:/tmp/docker-mailserver/
     extra_hosts:
       - "vulnlab.bo:127.0.0.1"

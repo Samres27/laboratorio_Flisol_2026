@@ -1,9 +1,9 @@
 // ── server.js ─────────────────────────────────────────────────────────────────
 require('./init_db');
+require('./internal'); // arrancar servidor interno en :8081
 
 const express = require('express');
 const path = require('path');
-const Datastore = require('nedb');
 
 const { userSessions, initSessions, verifyCsrfChallenge } = require('./csrf');
 const { setupVictim } = require('./clickjacking_setup');
@@ -19,6 +19,12 @@ app.set('views', path.join(__dirname, 'views'));
 
 const { db } = require('./init_db');
 
+// ── Cola para serializar escrituras a la DB ───────────────────────────────────
+let dbQueue = Promise.resolve();
+function enqueue(fn) {
+  dbQueue = dbQueue.then(fn).catch(e => console.error('[server] queue error:', e.message));
+  return dbQueue;
+}
 
 // ── Vistas ────────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.render('main'));
@@ -44,23 +50,34 @@ app.get('/clickjacking', (req, res) => {
 // ── Check flag ────────────────────────────────────────────────────────────────
 app.post('/api/check-flag', (req, res) => {
   const { category, challengeId, flag } = req.body;
-  db.findOne({ flag, category, id: Number(challengeId), inhabited: false, lastVisitedUrl:{ $ne: null }  }, (err, chal) => {
-    if (!chal) {
-      return res.json({ success: false, mensaje: 'Flag incorrecta. ¡Sigue intentando!' });
-    }
-    console.log("baneado esta url porque se ejecuto: "+chal.lastVisitedUrl)
-    const urlToBan = chal.lastVisitedUrl;
-    db.update(
-      { _id: chal._id },
-      { $set: { inhabited: true, banned: true } },
-      {},
-      () => {
-        if (urlToBan) banUrl(urlToBan);
-      }
-    );
 
-    res.json({ success: true, mensaje: `¡Correcto! Completaste el reto de ${chal.user}` });
-  });
+  enqueue(() => new Promise((resolve) => {
+    db.loadDatabase(() => {
+      db.findOne({ flag, category, id: Number(challengeId), inhabited: false }, (err, chal) => {
+        if (!chal) {
+          res.json({ success: false, mensaje: 'Flag incorrecta. ¡Sigue intentando!' });
+          return resolve();
+        }
+
+        db.update({ _id: chal._id }, { $set: { inhabited: true, banned: true } }, {}, () => {
+          // Buscar la URL guardada por el bot (puede haber llegado después)
+          db.loadDatabase(() => {
+            db.findOne({ _id: chal._id, lastVisitedUrl: { $ne: null } }, (err2, chalWithUrl) => {
+              if (chalWithUrl?.lastVisitedUrl) {
+                console.log(`[check-flag] baneando url: ${chalWithUrl.lastVisitedUrl}`);
+                banUrl(chalWithUrl.lastVisitedUrl);
+              } else {
+                console.log(`[check-flag] sin url para banear, el bot no visitó todavía`);
+              }
+              resolve();
+            });
+          });
+        });
+
+        res.json({ success: true, mensaje: `¡Correcto! Completaste el reto de ${chal.user}` });
+      });
+    });
+  }));
 });
 
 // ── Arrancar ──────────────────────────────────────────────────────────────────

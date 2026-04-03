@@ -3,7 +3,7 @@ const fs       = require('fs');
 const crypto   = require('crypto');
 const { execSync } = require('child_process');
 const Datastore = require('nedb');
-const db = new Datastore({ filename: path.join(__dirname, 'retos.db'), autoload: true });
+const db = new Datastore({ filename: './data/retos.db', autoload: true });
 
 const ACCOUNTS_FILE = '/mailserver-config/postfix-accounts.cf';
 const MAIL_DOMAIN   = 'vulnlab.bo';
@@ -107,7 +107,7 @@ function initDb() {
 
 // ── Al arrancar: crear DB si no existe, siempre sincronizar hashes ────────────
 if (require.main === module) {
-  if (!fs.existsSync('./retos.db')) {
+  if (!fs.existsSync('./data/retos.db')) {
     db.loadDatabase((err) => {
       if (err) return console.warn('[init] Error:', err);
       initDb();

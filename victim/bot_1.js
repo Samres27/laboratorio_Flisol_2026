@@ -1,88 +1,77 @@
+// ── bot_1.js ──────────────────────────────────────────────────────────────────
 const puppeteer = require('puppeteer');
-const Datastore = require("nedb")
 
-const { db } = require('./init_db');
-
-let FLAG_VALUE = null
-db.findOne({ category: 'xss', id: 5, inhabited: false }, (err, chal) => {
-    if (err) {
-        console.error(err);
-        return;
-    }
-
-    if (!chal) {
-        console.log("Challenge no encontrado");
-        return;
-    }
-    FLAG_VALUE = chal.flag;
-})
-// funcions whit 
+const INTERNAL = 'http://127.0.0.1:8081';
 const TARGET_URL = process.env.TARGET_URL || 'http://xss';
-
 const VISIT_INTERVAL = parseFloat(process.env.VISIT_INTERVAL || '0.6') * 1000;
 
-const PAGES = [
-    '/noexiste',
-];
+const PAGES = ['/noexiste'];
+
+let FLAG_VALUE = null;
+
+// ── Obtener flag desde internal.js ────────────────────────────────────────────
+async function loadFlag(retries = 10) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(`${INTERNAL}/internal/flag/xss/5`);
+      const data = await res.json();
+      if (data.flag) return data.flag;
+    } catch (e) {
+      console.warn(`[bot_1] Esperando internal... (${i + 1}/${retries})`);
+    }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  throw new Error('No se pudo obtener la flag de internal');
+}
 
 async function visit(page, url) {
-    try {
-        const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 10000 });
-        const status = response ? response.status() : null;
-         console.log(`[victim] ${url} → ${status}`); //funcion muy pesada
-
-        if (status === 200) {
-            await page.waitForTimeout(5000);
-        } else {
-            await page.waitForTimeout(1000);
-        }
-    } catch (e) {
-        console.log(`[victim] Error visiting ${url}: ${e.message}`);
-    }
+  try {
+    const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 10000 });
+    const status = response ? response.status() : null;
+    console.log(`[bot_1] ${url} → ${status}`);
+    await new Promise(r => setTimeout(r, status === 200 ? 5000 : 1000));
+  } catch (e) {
+    console.log(`[bot_1] Error visiting ${url}: ${e.message}`);
+  }
 }
 
 async function main() {
-    const url = new URL(TARGET_URL);
-    const cookieDomain = url.hostname;
+  FLAG_VALUE = await loadFlag();
+  console.log('[bot_1] Flag cargada, iniciando loop...');
 
-    while (true) {
-        try {
-            const browser = await puppeteer.launch({
-                headless: 'new',
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            });
-            const ctx = browser.defaultBrowserContext();
-            const page = await browser.newPage();
+  const url = new URL(TARGET_URL);
 
-            await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
+  while (true) {
+    try {
+      const browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+      const page = await browser.newPage();
 
-            const domains = ['flask', 'haproxy', 'localhost','xss'];
+      await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
 
-            for (const domain of domains) {
-                await page.setCookie({
-                    name: 'flagFlisol',
-                    value: FLAG_VALUE,
-                    domain: domain,
-                    path: '/',
-                });
-            }
+      for (const domain of ['flask', 'haproxy', 'localhost', 'xss']) {
+        await page.setCookie({
+          name: 'flagFlisol',
+          value: FLAG_VALUE,
+          domain,
+          path: '/',
+        });
+      }
 
-            // Verificar cookies
-            const cookies = await page.cookies();
-            for (const path of PAGES) {
-                await visit(page, TARGET_URL + path);
-                await new Promise(r => setTimeout(r, VISIT_INTERVAL));
-            }
-
-            await browser.close();
-            //console.log(`[victim] Cycle done. Waiting ${VISIT_INTERVAL}ms ...`); //se llena muy rapido
-
-        } catch (e) {
-            console.log(`[victim] Cycle error: ${e.message}`);
-        }
-
+      for (const path of PAGES) {
+        await visit(page, TARGET_URL + path);
         await new Promise(r => setTimeout(r, VISIT_INTERVAL));
+      }
+
+      await browser.close();
+    } catch (e) {
+      console.log(`[bot_1] Cycle error: ${e.message}`);
     }
+
+    await new Promise(r => setTimeout(r, VISIT_INTERVAL));
+  }
 }
 
 main();

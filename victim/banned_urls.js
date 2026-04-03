@@ -1,31 +1,35 @@
 // ── banned_urls.js ────────────────────────────────────────────────────────────
-// DB separada para URLs baneadas — compartida entre todos los procesos via nedb
-const Datastore = require('nedb');
+const fs = require('fs');
+const path = require('path');
 const { getBaseUrl } = require('./utils');
 
-const banned_db = new Datastore({ filename: './banned_urls.db', autoload: true });
-banned_db.ensureIndex({ fieldName: 'url', unique: true });
+const FILE = path.resolve('./data/banned_urls.txt');
 
-// Banear una URL (se guarda la base, sin query params)
-function banUrl(url) {
-  const base = getBaseUrl(url, 1);
-  console.log(`[banned_urls] Baneando: ${base}`);
-  banned_db.update(
-    { url: base },
-    { $set: { url: base, bannedAt: new Date() } },
-    { upsert: true }
-  );
+function normalizeUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.origin + u.pathname;
+  } catch {
+    return url;
+  }
 }
 
-// Verificar si una URL está baneada (startsWith sobre todas las baneadas)
+function banUrl(url) {
+  const base = normalizeUrl(getBaseUrl(url, 1));
+  console.log(`[banned_urls] Baneando: ${base}`);
+  fs.appendFileSync(FILE, base + '\n');
+}
+
 function isBanned(url) {
-  return new Promise((resolve, reject) => {
-    banned_db.find({}, (err, docs) => {
-      if (err) return reject(err);
-      const banned = docs.some(doc => url.startsWith(doc.url));
-      resolve(banned);
-    });
-  });
+  try {
+    const normalized = normalizeUrl(url);
+    const lines = fs.readFileSync(FILE, 'utf8').split('\n').filter(Boolean);
+    const banned = lines.some(base => normalized.startsWith(base));
+    if (banned) console.log(`[banned_urls] Baneada: ${url}`);
+    return Promise.resolve(banned);
+  } catch {
+    return Promise.resolve(false);
+  }
 }
 
 module.exports = { banUrl, isBanned };
