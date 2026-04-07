@@ -1,66 +1,83 @@
 services:
-  flask:
-    build:
-      context: .
-      dockerfile: ./xss/Dockerfile
-    restart: unless-stopped
+  # flask:
+  #   build:
+  #     context: .
+  #     dockerfile: ./xss/Dockerfile
+  #   restart: unless-stopped
     
-    expose:
-      - "8000"
-    networks:
-      - lab_net
+  #   expose:
+  #     - "8000"
+  #   networks:
+  #     - lab_net
     
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-        max-file: "3"  # Maximum number of log files to keep
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+  #       max-file: "3"  # Maximum number of log files to keep
 
-  xss:
-    image: vladimirjk/haproxy-docker-logs:1.8-alpine
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:80:80"
-      - "8404:8404"
-    volumes:
-      - ./xss/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-    depends_on:
-      - flask
-    networks:
-      - lab_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-        max-file: "3"  # Maximum number of log files to keep
+  # xss:
+  #   image: vladimirjk/haproxy-docker-logs:1.8-alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - "127.0.0.1:80:80"
+  #     - "8404:8404"
+  #   volumes:
+  #     - ./xss/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+  #   depends_on:
+  #     - flask
+  #   networks:
+  #     - lab_net
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+  #       max-file: "3"  # Maximum number of log files to keep
 
-  csrf:
-    build:
-      context: .
-      dockerfile: ./csrf/dockerfile
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-    ports:
-      - "127.0.0.1:81:80"
-    networks:
-      - lab_net
+  # csrf:
+  #   build:
+  #     context: .
+  #     dockerfile: ./csrf/dockerfile
+  #   restart: unless-stopped
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #   ports:
+  #     - "127.0.0.1:81:80"
+  #   networks:
+  #     - lab_net
     
 
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
-        max-file: "3"  # Maximum number of log files to keep
-  clickjacking:
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+  #       max-file: "3"  # Maximum number of log files to keep
+  # clickjacking:
+  #   build:
+  #     context: clickjacking
+  #     dockerfile: ./dockerfile
+  #   restart: unless-stopped
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #   ports:
+  #     - "127.0.0.1:82:443"
+  #   networks:
+  #     - lab_net
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
+  #       max-file: "3"  # Maximum number of log files to keep
+
+  dom:
     build:
-      context: clickjacking
+      context: dom
       dockerfile: ./dockerfile
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
     ports:
-      - "127.0.0.1:82:443"
+      - "127.0.0.1:83:443"
     networks:
       - lab_net
     logging:
@@ -68,6 +85,7 @@ services:
       options:
         max-size: "10m" # Maximum size of each log file (e.g., 10 megabytes)
         max-file: "3"  # Maximum number of log files to keep
+  
   victim:
     build:
       context: ./victim
@@ -82,9 +100,10 @@ services:
     ports:
       - "127.0.0.1:1001:8080"
     depends_on:
-      - xss
-      - csrf
-      - clickjacking
+      # - xss
+      # - csrf
+      # - clickjacking
+      - dom
     networks:
       - lab_net
     

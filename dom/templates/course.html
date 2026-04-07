@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.title }}{% endblock %}
+{% block content %}
+<div class="wrapper">
+  <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm" style="margin-bottom:1.5rem;">← Back</a>
+
+  {% set nivel_badge = 'badge-green' if course.level == 'Principiante' else ('badge-blue' if course.level == 'Intermedio'
+  else 'badge-orange') %}
+
+  <div class="card" style="padding:2rem;">
+    <div style="margin-bottom:.8rem;">
+      <span class="badge {{ nivel_badge }}">{{ course.level }}</span>
+    </div>
+    <h1 class="page-title" style="margin-bottom:.6rem;">{{ course.title }}</h1>
+    <div class="card-meta" style="margin-bottom:1.5rem;">
+      <span>👨‍🏫 {{ course.instructor }}</span>
+      <span>⏱ {{ course.duration }}</span>
+      <span>👥 {{ course.estudiantes|length }} student{{ 's' if course.estudiantes|length != 1 else '' }}</span>
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif;margin-bottom:.6rem;">Description</h3>
+    <p style="color:#4a4540;line-height:1.75;margin-bottom:1.8rem;">{{ course.description }}</p>
+
+    {% if current_user.is_authenticated %}
+    {% if registered %}
+    <div style="display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;">
+      <span class="badge badge-green" style="font-size:.85rem;padding:.4rem 1rem;">✓ Enrolled</span>
+      <form method="POST" action="{{ url_for('unsubscribe', id=course.id) }}" style="display:inline;">
+        <button type="submit" class="btn btn-danger btn-sm">Unenroll</button>
+      </form>
+    </div>
+    {% else %}
+    <a href="{{ url_for('register', id=course.id) }}" class="btn btn-primary">Enroll in this course</a>
+    {% endif %}
+    {% else %}
+    <p style="color:var(--muted);font-size:.9rem;">
+      <a href="{{ url_for('login') }}" style="color:var(--accent2);font-weight:500;">Log in</a> to enroll in this course.
+    </p>
+    {% endif %}
+
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <hr>
+    <div style="display:flex;gap:.8rem;flex-wrap:wrap;">
+      <a href="{{ url_for('editar_curso', id=course.id) }}" class="btn btn-blue btn-sm">Edit course</a>
+      <form method="POST" action="{{ url_for('delete_course', id=course.id) }}"
+        onsubmit="return confirm('Delete this course?')">
+        <button type="submit" class="btn btn-danger btn-sm">Delete course</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<script>
+  window.addEventListener('message', function (e) {
+    var url = e.data;
+    if (url.indexOf('http:') > -1 || url.indexOf('https:') > -1) {
+      location.href = url;
+    }
+  }, false);
+</script>
+{% endblock %}

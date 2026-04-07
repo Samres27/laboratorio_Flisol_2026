@@ -1,0 +1,33 @@
+
+FROM python:3.9-alpine
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apk add --no-cache \
+        gcc \
+        g++ \
+        musl-dev \
+        python3-dev \
+        libffi-dev \
+        openssl
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Generar certificado autofirmado
+RUN openssl req -x509 -newkey rsa:2048 \
+    -keyout /app/key.pem \
+    -out /app/cert.pem \
+    -days 365 -nodes \
+    -subj "/CN=127.0.0.1"
+
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+RUN sed -i 's/\r//' /docker-entrypoint.sh
+EXPOSE 443
+ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}{{ accion }} Landing Page{% endblock %}
+{% block content %}
+<div class="wrapper">
+  <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary btn-sm" style="margin-bottom:1.5rem;">← Admin Panel</a>
+
+  <div class="form-box" style="max-width:640px;">
+    <h2 class="form-title">{{ accion }} Landing Page</h2>
+    <form method="POST">
+
+      <label for="title">Main title *</label>
+      <input type="text" id="title" name="title" placeholder="E.g.: Master Python in 40 hours"
+             value="{{ lp.title if lp else '' }}" required>
+
+      <label for="subtitle">Subtitle *</label>
+      <input type="text" id="subtitle" name="subtitle" placeholder="Supporting phrase that reinforces the title"
+             value="{{ lp.subtitle if lp else '' }}" required>
+
+      <label for="description">Long description *</label>
+      <textarea id="description" name="description" placeholder="Describe the course in detail: what it is for, what makes it special..." required style="min-height:120px;">{{ lp.description if lp else '' }}</textarea>
+
+      <label for="benefits">Benefits <span style="color:var(--muted);font-weight:400;">(one per line)</span> *</label>
+      <textarea id="benefits" name="benefits" placeholder="Learn at your own pace&#10;Practical projects&#10;Certificate included" required style="min-height:110px;">{{ lp.benefits if lp else '' }}</textarea>
+
+      <label for="public">Who is this for <span style="color:var(--muted);font-weight:400;">(one per line)</span> *</label>
+      <textarea id="public" name="public" placeholder="People with no experience&#10;Professionals who want to update their skills" required style="min-height:90px;">{{ lp.public if lp else '' }}</textarea>
+
+      <div class="grid-2">
+        <div>
+          <label for="price">Price *</label>
+          <input type="text" id="price" name="price" placeholder="E.g.: $49 USD — one-time payment"
+                 value="{{ lp.price if lp else '' }}" required>
+        </div>
+        <div>
+          <label for="text_cta">Button text</label>
+          <input type="text" id="text_cta" name="text_cta" placeholder="I want to enroll"
+                 value="{{ lp.text_cta if lp else 'I want to enroll' }}">
+        </div>
+      </div>
+
+      <label for="cta_url">Button URL (link to course or page)</label>
+      <input type="text" id="cta_url" name="cta_url" placeholder="/course/1 or https://..."
+             value="{{ lp.cta_url if lp else '#' }}">
+
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;">
+        <input type="checkbox" id="active" name="active" style="width:auto;margin:0;"
+               {% if not lp or lp.active %}checked{% endif %}>
+        <label for="active" style="margin:0;font-size:.875rem;">Visible to the public</label>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:.7rem;">
+        {{ accion }} Landing Page
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

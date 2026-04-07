@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Academy{% endblock %} — EduPlat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:      #1a1a2e;
+      --paper:    #f7f3ee;
+      --cream:    #ede8e0;
+      --accent:   #c8602a;
+      --accent2:  #2a6ec8;
+      --muted:    #7a7570;
+      --success:  #2d7a4f;
+      --error:    #c0392b;
+      --info:     #2a5ea0;
+      --border:   #d4cec5;
+      --shadow:   rgba(26,26,46,.12);
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.6;
+    }
+
+    /* ── Nav ── */
+    nav {
+      background: var(--ink);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 16px var(--shadow);
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--paper);
+      text-decoration: none;
+      letter-spacing: -.5px;
+    }
+    .logo span { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: .25rem; }
+    .nav-links a {
+      color: #c8c4be;
+      text-decoration: none;
+      font-size: .875rem;
+      font-weight: 400;
+      padding: .4rem .85rem;
+      border-radius: 6px;
+      transition: background .18s, color .18s;
+    }
+    .nav-links a:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .nav-links a.btn-accent {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 500;
+    }
+    .nav-links a.btn-accent:hover { background: #b3521f; }
+    .nav-tag {
+      font-size: .7rem;
+      background: var(--accent);
+      color: #fff;
+      padding: .1rem .4rem;
+      border-radius: 4px;
+      margin-left: .3rem;
+      font-weight: 500;
+      vertical-align: middle;
+      letter-spacing: .03em;
+    }
+
+    /* ── Flash messages ── */
+    .flash-container { max-width: 900px; margin: 1.5rem auto 0; padding: 0 1.5rem; width: 100%; }
+    .flash {
+      padding: .8rem 1.2rem;
+      border-radius: 8px;
+      margin-bottom: .6rem;
+      font-size: .9rem;
+      font-weight: 500;
+      border-left: 4px solid;
+    }
+    .flash.success { background: #eaf5ef; color: var(--success); border-color: var(--success); }
+    .flash.error   { background: #fdf0ee; color: var(--error);   border-color: var(--error); }
+    .flash.info    { background: #eef3fc; color: var(--info);    border-color: var(--info); }
+
+    /* ── Main wrapper ── */
+    .wrapper { max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem; flex: 1; width: 100%; }
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: .4rem;
+    }
+    .page-subtitle { color: var(--muted); margin-bottom: 2rem; font-size: .95rem; }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1rem;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .card:hover { box-shadow: 0 6px 24px var(--shadow); transform: translateY(-2px); }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: .4rem;
+    }
+    .card-meta { font-size: .82rem; color: var(--muted); margin-bottom: .6rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .card-desc { font-size: .9rem; color: #4a4540; line-height: 1.65; margin-bottom: 1rem; }
+    .badge {
+      display: inline-block;
+      font-size: .72rem;
+      padding: .2rem .65rem;
+      border-radius: 20px;
+      font-weight: 500;
+      letter-spacing: .03em;
+    }
+    .badge-green  { background: #e4f5ec; color: #256640; }
+    .badge-blue   { background: #e4eef5; color: #1e5080; }
+    .badge-orange { background: #fdf0e4; color: #8a4010; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-block;
+      padding: .55rem 1.2rem;
+      border-radius: 8px;
+      font-size: .875rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: background .18s, transform .12s;
+      font-family: inherit;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary   { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #b3521f; }
+    .btn-secondary { background: var(--cream); color: var(--ink); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #e0dbd2; }
+    .btn-blue      { background: var(--accent2); color: #fff; }
+    .btn-blue:hover { background: #1f5aa0; }
+    .btn-danger    { background: #fdf0ee; color: var(--error); border: 1px solid #f0c8c2; }
+    .btn-danger:hover { background: var(--error); color: #fff; }
+    .btn-sm { padding: .35rem .8rem; font-size: .8rem; }
+
+    /* ── Forms ── */
+    .form-box {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2.2rem 2rem;
+      max-width: 480px;
+      margin: 0 auto;
+      box-shadow: 0 4px 20px var(--shadow);
+    }
+    .form-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      text-align: center;
+      margin-bottom: 1.6rem;
+    }
+    label { display: block; font-size: .85rem; font-weight: 500; margin-bottom: .35rem; color: var(--ink); }
+    input, textarea, select {
+      width: 100%;
+      padding: .65rem .9rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: .9rem;
+      color: var(--ink);
+      background: var(--paper);
+      outline: none;
+      transition: border-color .18s;
+      margin-bottom: 1.1rem;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent2); background: #fff; }
+    textarea { min-height: 100px; resize: vertical; }
+    .form-footer { text-align: center; margin-top: .8rem; font-size: .875rem; color: var(--muted); }
+    .form-footer a { color: var(--accent2); text-decoration: none; font-weight: 500; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th {
+      text-align: left;
+      padding: .75rem 1rem;
+      background: var(--cream);
+      color: var(--muted);
+      font-weight: 500;
+      font-size: .8rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: .75rem 1rem;
+      border-bottom: 1px solid #f0ece5;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #faf8f5; }
+    .table-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .section-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media(max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: .8rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="{{ url_for('index') }}">Edu<span>Plat</span></a>
+  <div class="nav-links">
+    <a href="{{ url_for('index') }}">Courses</a>
+    <a href="{{ url_for('landing_pages') }}">Offers</a>
+    <a href="{{ url_for('testimonies') }}">Testimonials</a>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('my_courses') }}">My Courses</a>
+      {% if current_user.is_admin %}
+        <a href="{{ url_for('admin_panel') }}">Admin <span class="nav-tag">admin</span></a>
+      {% endif %}
+      <a href="{{ url_for('logout') }}">Log out</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Log in</a>
+      <a href="{{ url_for('record') }}" class="btn-accent">Sign up</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<footer>© 2024 EduPlat — Online course platform</footer>
+</body>
+</html>

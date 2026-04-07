@@ -1,27 +1,32 @@
-const path     = require('path');
-const fs       = require('fs');
-const crypto   = require('crypto');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 const { execSync } = require('child_process');
 const Datastore = require('nedb');
-const db = new Datastore({ filename: './data/retos.db', autoload: true });
+
 
 const ACCOUNTS_FILE = '/mailserver-config/postfix-accounts.cf';
-const MAIL_DOMAIN   = 'vulnlab.bo';
+const MAIL_DOMAIN = 'vulnlab.bo';
 
 const XSS_USERS = ['BJames', 'Mary', 'Michael', 'Patricia', 'John'];
 
 const CSRF_USERS = [
   { username: 'mrodriguez', password: 'pollo1234' },
-  { username: 'lperez',     password: 'casa1234'  },
-  { username: 'agarcia',    password: 'prado1234' },
+  { username: 'lperez', password: 'casa1234' },
+  { username: 'agarcia', password: 'prado1234' },
 ];
 
-const CLICKJACKING_USERS = ['samuel', 'douglas'];
 
+const CLICKJACKING_USERS = ['samuel', 'douglas'];
+const DOM_USERS = [
+  { username: 'mariasantillana', password: '1234pavo' },
+  { username: 'lusianaperez', password: '1234mesa' },
+  { username: 'antoniacastillo', password: '1234famr' },
+];
 function hashPassword(password) {
-  const salt   = crypto.randomBytes(6).toString('base64')
-                      .replace(/[^a-zA-Z0-9]/g, '')
-                      .substring(0, 8);
+  const salt = crypto.randomBytes(6).toString('base64')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .substring(0, 8);
   const hashed = execSync(
     `mkpasswd -m sha-512 -S "${salt}" "${password}"`,
     { stdio: 'pipe' }
@@ -32,8 +37,8 @@ function hashPassword(password) {
 // ── Paso 1: crear cuenta si no existe, o actualizar hash si ya existe ─────────
 function createMailAccount(email, password) {
   try {
-    const hash    = hashPassword(password);
-    let content   = fs.existsSync(ACCOUNTS_FILE)
+    const hash = hashPassword(password);
+    let content = fs.existsSync(ACCOUNTS_FILE)
       ? fs.readFileSync(ACCOUNTS_FILE, 'utf8')
       : '';
 
@@ -65,7 +70,7 @@ function syncMailAccounts(db) {
     db.find({}, (err, docs) => {
       if (err) return resolve();
       docs.forEach(doc => {
-        const email    = doc.email ?? `${doc.user.toLowerCase()}@${MAIL_DOMAIN}`;
+        const email = doc.email ?? `${doc.user.toLowerCase()}@${MAIL_DOMAIN}`;
         const password = doc.password ?? doc.flag;
         createMailAccount(email, password);
       });
@@ -75,27 +80,46 @@ function syncMailAccounts(db) {
   });
 }
 
+const DB_PATH = path.join(__dirname, 'data', 'retos.db');
+if (!fs.existsSync(path.dirname(DB_PATH))) {
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+}
+const db = new Datastore({ filename: './data/retos.db', autoload: true });
+
 function initDb() {
+  db.find({}, (err, docs) => {
+    if (err) return console.error(err);
+    if (docs.length > 0) {
+      console.log('DB ya contiene datos, omitiendo inserción inicial');
+      return;
+    }
 
-  XSS_USERS.forEach((user, i) => {
-    const flag  = `Flisol{${makeFlag()}}`;
-    const email = `${user.toLowerCase()}@${MAIL_DOMAIN}`;
-    db.insert({ id: i + 1, flag, category: 'xss', inhabited: false, user, email, password: flag,lastVisitedUrl: null,  banned: false });
-    createMailAccount(email, flag);
-  });
+    XSS_USERS.forEach((user, i) => {
+      const flag = `Flisol{${makeFlag()}}`;
+      const email = `${user.toLowerCase()}@${MAIL_DOMAIN}`;
+      db.insert({ id: i + 1, flag, category: 'xss', inhabited: false, user, email, password: flag, lastVisitedUrl: null, banned: false });
+      createMailAccount(email, flag);
+    });
 
-  CSRF_USERS.forEach((u, i) => {
-    const flag  = `Flisol{${makeFlag()}}`;
-    const email = `${u.username}@${MAIL_DOMAIN}`;
-    db.insert({ id: i, flag, category: 'csrf', inhabited: false, user: u.username, email, password: u.password,lastVisitedUrl: null,  banned: false   });
-    createMailAccount(email, u.password);
-  });
+    CSRF_USERS.forEach((u, i) => {
+      const flag = `Flisol{${makeFlag()}}`;
+      const email = `${u.username}@${MAIL_DOMAIN}`;
+      db.insert({ id: i, flag, category: 'csrf', inhabited: false, user: u.username, email, password: u.password, lastVisitedUrl: null, banned: false });
+      createMailAccount(email, u.password);
+    });
 
-  CLICKJACKING_USERS.forEach((user, i) => {
-    const flag  = `Flisol{${makeFlag()}}`;
-    const email = `${user}@${MAIL_DOMAIN}`;
-    db.insert({ id: i, flag, category: 'clickjacking', inhabited: false, user, email, password: flag,lastVisitedUrl: null,  banned: false });
-    createMailAccount(email, flag);
+    CLICKJACKING_USERS.forEach((user, i) => {
+      const flag = `Flisol{${makeFlag()}}`;
+      const email = `${user}@${MAIL_DOMAIN}`;
+      db.insert({ id: i, flag, category: 'clickjacking', inhabited: false, user, email, password: flag, lastVisitedUrl: null, banned: false });
+      createMailAccount(email, flag);
+    });
+    DOM_USERS.forEach((u, i) => {
+      const flag = `Flisol{${makeFlag()}}`;
+      const email = `${u.username}@${MAIL_DOMAIN}`;
+      db.insert({ id: i, flag, category: 'dom', inhabited: false, user: u.username, email, password: u.password, lastVisitedUrl: null, banned: false });
+      createMailAccount(email, u.password);
+    });
   });
 
 

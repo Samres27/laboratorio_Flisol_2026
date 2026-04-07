@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel{% endblock %}
+{% block content %}
+<div class="wrapper">
+  <h1 class="page-title">Admin Panel</h1>
+  <p class="page-subtitle">Course, offer, and user management</p>
+
+  <!-- Courses -->
+  <div class="section-header">
+    <span class="section-title">Courses ({{ courses|length }})</span>
+    <a href="{{ url_for('new_course') }}" class="btn btn-primary btn-sm">+ New course</a>
+  </div>
+
+  {% if courses %}
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Title</th><th>Instructor</th><th>Level</th><th>Duration</th><th>Enrolled</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for course in courses %}
+          <tr>
+            <td style="color:var(--muted);">{{ course.id }}</td>
+            <td><a href="{{ url_for('view_course', id=course.id) }}" style="color:var(--accent2);text-decoration:none;font-weight:500;">{{ course.title }}</a></td>
+            <td>{{ course.instructor }}</td>
+            <td>
+              {% set nb = 'badge-green' if course.level == 'Principiante' else ('badge-blue' if course.level == 'Intermedio' else 'badge-orange') %}
+              <span class="badge {{ nb }}">{{ course.level }}</span>
+            </td>
+            <td>{{ course.duration }}</td>
+            <td>{{ course.estudiantes|length }}</td>
+            <td>
+              <a href="{{ url_for('editar_curso', id=course.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+              <form method="POST" action="{{ url_for('delete_course', id=course.id) }}" style="display:inline;" onsubmit="return confirm('Delete «{{ course.title }}»?')">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty" style="padding:1.5rem;">
+      <p>No courses. <a href="{{ url_for('new_course') }}" style="color:var(--accent2);">Create the first one.</a></p>
+    </div>
+  {% endif %}
+
+  <hr>
+
+  <!-- Offers -->
+  <div class="section-header">
+    <span class="section-title">Offers ({{ landings|length }})</span>
+    <a href="{{ url_for('nueva_landing') }}" class="btn btn-primary btn-sm">+ New landing</a>
+  </div>
+
+  {% if landings %}
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Title</th><th>Price</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for lp in landings %}
+          <tr>
+            <td style="color:var(--muted);">{{ lp.id }}</td>
+            <td><a href="{{ url_for('ver_landing', id=lp.id) }}" style="color:var(--accent2);text-decoration:none;font-weight:500;">{{ lp.title }}</a></td>
+            <td style="color:var(--muted);font-size:.85rem;">{{ lp.price }}</td>
+            <td>
+              {% if lp.active %}
+                <span class="badge badge-green">Active</span>
+              {% else %}
+                <span class="badge" style="background:#f0ece5;color:var(--muted);">Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('edit_landing', id=lp.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+              <form method="POST" action="{{ url_for('toggle_landing', id=lp.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-secondary btn-sm">
+                  {{ 'Deactivate' if lp.active else 'Activate' }}
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('delete_landing', id=lp.id) }}" style="display:inline;" onsubmit="return confirm('Delete this landing page?')">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty" style="padding:1.5rem;">
+      <p>No offers. <a href="{{ url_for('nueva_landing') }}" style="color:var(--accent2);">Create the first one.</a></p>
+    </div>
+  {% endif %}
+
+  <hr>
+
+  <!-- Users -->
+  <div class="section-header" style="margin-bottom:1rem;">
+    <span class="section-title">Users ({{ users|length }})</span>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Courses</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td style="color:var(--muted);">{{ u.id }}</td>
+          <td>{{ u.name }}</td>
+          <td style="color:var(--muted);">{{ u.email }}</td>
+          <td>
+            {% if u.is_admin %}<span class="badge badge-orange">Admin</span>
+            {% else %}<span class="badge badge-blue">User</span>{% endif %}
+          </td>
+          <td>{{ u.courses|length }}</td>
+          <td>
+            {% if u.id != current_user.id %}
+              <form method="POST" action="{{ url_for('toggle_admin', id=u.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-secondary btn-sm">
+                  {% if u.is_admin %}Remove admin{% else %}Make admin{% endif %}
+                </button>
+              </form>
+            {% else %}
+              <span style="color:var(--muted);font-size:.8rem;">(you)</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

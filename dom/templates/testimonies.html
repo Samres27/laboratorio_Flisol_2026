@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}Testimonials{% endblock %}
+{% block content %}
+<div class="wrapper">
+  
+  <script src="{{ url_for('static', filename='js/prototype_pollution.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/offers.js') }}"></script>
+  <h1 class="page-title">What our students say</h1>
+  <p class="page-subtitle">Real experiences from people who transformed their careers with EduPlat</p>
+
+  <div class="testimonies-grid">
+
+    <div class="testimonio-card">
+      <div class="stars">★★★★★</div>
+      <p class="testimonio-texto">"I started the Python course knowing absolutely nothing about programming. In less than two months I was already automating tasks at my job. The way they explain concepts is incredibly clear."</p>
+      <div class="testimonio-autor">
+        <div class="autor-avatar">MR</div>
+        <div>
+          <div class="autor-name">María Rodríguez</div>
+          <div class="autor-detalle">Data Analyst · Course: Introduction to Python</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonio-card">
+      <div class="stars">★★★★★</div>
+      <p class="testimonio-texto">"The Web Design course gave me exactly the tools I needed. Now I work as a freelancer and already have three clients. The investment was totally worth it."</p>
+      <div class="testimonio-autor">
+        <div class="autor-avatar">JL</div>
+        <div>
+          <div class="autor-name">Javier López</div>
+          <div class="autor-detalle">Freelance Developer · Course: Web Design with HTML and CSS</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonio-card">
+      <div class="stars">★★★★☆</div>
+      <p class="testimonio-texto">"What I liked most was the pace. I could advance at my own speed without feeling pressure. Databases were a topic that always intimidated me, and now I feel very confident with SQL."</p>
+      <div class="testimonio-autor">
+        <div class="autor-avatar">CP</div>
+        <div>
+          <div class="autor-name">Carolina Pérez</div>
+          <div class="autor-detalle">Systems Administrator · Course: Databases with SQL</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonio-card featured">
+      <div class="stars">★★★★★</div>
+      <p class="testimonio-texto">"I had wanted to truly learn JavaScript for years, not just copy code from the internet. This course gave me a solid foundation. The practical exercises make the difference. Totally recommended."</p>
+      <div class="testimonio-autor">
+        <div class="autor-avatar">AT</div>
+        <div>
+          <div class="autor-name">Andrés Torres</div>
+          <div class="autor-detalle">Junior Developer · Course: Modern JavaScript</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonio-card">
+      <div class="stars">★★★★★</div>
+      <p class="testimonio-texto">"The Python instructor answers questions very patiently. I never felt lost or alone in the process. The student community also helps a lot."</p>
+      <div class="testimonio-autor">
+        <div class="autor-avatar">LG</div>
+        <div>
+          <div class="autor-name">Lucía Gómez</div>
+          <div class="autor-detalle">University Student · Course: Introduction to Python</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonio-card">
+      <div class="stars">★★★★☆</div>
+      <p class="testimonio-texto">"Very good content and well structured. I learned more in 40 hours of the course than in a university semester. The only thing I would ask for is more practice exercises at the end of each module."</p>
+      <div class="testimonio-autor">
+        <div class="autor-avatar">FM</div>
+        <div>
+          <div class="autor-name">Felipe Morales</div>
+          <div class="autor-detalle">Accountant · Course: Databases with SQL</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-num">4.8</div>
+      <div class="stat-label">Average rating</div>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat">
+      <div class="stat-num">1,200+</div>
+      <div class="stat-label">Active students</div>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat">
+      <div class="stat-num">94%</div>
+      <div class="stat-label">Would recommend EduPlat</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .testimonies-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  @media(max-width: 660px) { .testimonies-grid { grid-template-columns: 1fr; } }
+
+  .testimonio-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.6rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .testimonio-card:hover { box-shadow: 0 6px 24px var(--shadow); transform: translateY(-2px); }
+  .testimonio-card.featured {
+    border-color: var(--accent);
+    background: #fff8f4;
+    grid-column: span 2;
+  }
+  @media(max-width: 660px) { .testimonio-card.featured { grid-column: span 1; } }
+
+  .stars { color: #e8a020; font-size: 1rem; letter-spacing: .1em; }
+  .testimonio-texto {
+    font-size: .93rem;
+    color: #3a3530;
+    line-height: 1.75;
+    font-style: italic;
+  }
+  .testimonio-card.featured .testimonio-texto { font-size: 1rem; }
+
+  .testimonio-autor { display: flex; align-items: center; gap: .85rem; margin-top: auto; }
+  .autor-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: .8rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: .05em;
+  }
+  .testimonio-card.featured .autor-avatar { background: var(--accent); }
+  .autor-name { font-weight: 600; font-size: .9rem; color: var(--ink); }
+  .autor-detalle { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
+
+  /* Stats */
+  .stats-bar {
+    background: var(--ink);
+    border-radius: 14px;
+    padding: 1.8rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--paper);
+  }
+  .stat-label { font-size: .8rem; color: #8a8680; margin-top: .2rem; }
+  .stat-sep { width: 1px; height: 40px; background: rgba(255,255,255,.12); }
+  @media(max-width: 500px) { .stat-sep { display: none; } }
+</style>
+{% endblock %}

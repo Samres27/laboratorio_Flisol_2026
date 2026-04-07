@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Offers{% endblock %}
+{% block content %}
+<div class="wrapper">
+  <h1 class="page-title">Offers</h1>
+  <p class="page-subtitle">Our special courses</p>
+
+  {% if pages %}
+    <div class="lp-grid">
+      {% for p in pages %}
+      <a href="{{ url_for('ver_landing', id=p.id) }}" class="lp-card">
+        <div class="lp-card-inner">
+          <div class="lp-eyebrow">Special offer</div>
+          <h2 class="lp-card-title">{{ p.title }}</h2>
+          <p class="lp-card-sub">{{ p.subtitle }}</p>
+          <div class="lp-card-footer">
+            <span class="lp-price">{{ p.price }}</span>
+            <span class="lp-cta-hint">View offer →</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      <div class="empty-icon">📣</div>
+      <p>No offers published yet.</p>
+      {% if current_user.is_authenticated and current_user.is_admin %}
+        <br><a href="{{ url_for('nueva_landing') }}" class="btn btn-primary">Create the first one</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<style>
+  .lp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .lp-card {
+    text-decoration: none;
+    display: block;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--ink);
+    border: 1px solid #2e2e4a;
+    transition: transform .22s, box-shadow .22s;
+    position: relative;
+  }
+  .lp-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(200,96,42,.18) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .lp-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(26,26,46,.35); }
+
+  .lp-card-inner { padding: 1.8rem; display: flex; flex-direction: column; gap: .7rem; min-height: 220px; }
+
+  .lp-eyebrow {
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .lp-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.3;
+  }
+
+  .lp-card-sub {
+    font-size: .85rem;
+    color: #9e9a94;
+    line-height: 1.65;
+    flex: 1;
+  }
+
+  .lp-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: .5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
+
+  .lp-price {
+    font-weight: 700;
+    font-size: .95rem;
+    color: #fff;
+  }
+
+  .lp-cta-hint {
+    font-size: .8rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+</style>
+<script>
+  window.addEventListener('message', function (e) {
+    var url = e.data;
+    if (url.indexOf('http:') > -1 || url.indexOf('https:') > -1) {
+      location.href = url;
+    }
+  }, false);
+</script>
+{% endblock %}

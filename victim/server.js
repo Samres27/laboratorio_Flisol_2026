@@ -47,6 +47,12 @@ app.get('/clickjacking', (req, res) => {
   });
 });
 
+app.get('/dom', (req, res) => {
+  db.find({ category: 'dom' }, (err, docs) => {
+    res.render('challenges', { challenges: docs.sort((a, b) => a.id - b.id), title: 'Document Object Model (DOM)' });
+  });
+});
+
 // ── Check flag ────────────────────────────────────────────────────────────────
 app.post('/api/check-flag', (req, res) => {
   const { category, challengeId, flag } = req.body;

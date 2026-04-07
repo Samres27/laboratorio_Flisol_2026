@@ -5,6 +5,7 @@ const { simpleParser } = require('mailparser');
 const { visitXss } = require('./xss');
 const { visitCsrf } = require('./csrf');
 const { visitClickjacking } = require('./clickjacking');
+const { visitDom } = require('./dom');
 
 const IMAP_HOST = 'mailserver';
 const IMAP_PORT = 143;
@@ -141,6 +142,14 @@ async function processMail(reto, mail) {
       });
       if (lastUrl3) await saveUrl(reto._id, lastUrl3);
       await runClickjackingVerifications();
+      break;
+    }
+    case 'dom':{
+      const lastUrl4 = await visitDom(url,reto.flag,{
+        email: reto.email,
+        password: reto.password,
+      })
+      if (lastUrl4) await saveUrl(reto._id, lastUrl4);
       break;
     }
   }

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{{ accion }} Course{% endblock %}
+{% block content %}
+<div class="wrapper">
+  <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary btn-sm" style="margin-bottom:1.5rem;">← Admin Panel</a>
+
+  <div class="form-box" style="max-width:580px;">
+    <h2 class="form-title">{{ accion }} Course</h2>
+    <form method="POST">
+      <label for="title">Course title</label>
+      <input type="text" id="title" name="title" placeholder="E.g.: Introduction to Python"
+             value="{{ course.title if course else '' }}" required>
+
+      <label for="description">Description</label>
+      <textarea id="description" name="description" placeholder="Describe the content and objectives of the course..." required>{{ course.description if course else '' }}</textarea>
+
+      <div class="grid-2">
+        <div>
+          <label for="instructor">Instructor</label>
+          <input type="text" id="instructor" name="instructor" placeholder="Instructor name"
+                 value="{{ course.instructor if course else '' }}" required>
+        </div>
+        <div>
+          <label for="duration">Duration</label>
+          <input type="text" id="duration" name="duration" placeholder="E.g.: 40 hours"
+                 value="{{ course.duration if course else '' }}" required>
+        </div>
+      </div>
+
+      <label for="level">Level</label>
+      <select id="level" name="level" required>
+        <option value="">Select level…</option>
+        <option value="Principiante" {% if course and course.level == 'Principiante' %}selected{% endif %}>Beginner</option>
+        <option value="Intermedio" {% if course and course.level == 'Intermedio' %}selected{% endif %}>Intermediate</option>
+        <option value="Avanzado" {% if course and course.level == 'Avanzado' %}selected{% endif %}>Advanced</option>
+      </select>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:.7rem;">
+        {{ accion }} Course
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

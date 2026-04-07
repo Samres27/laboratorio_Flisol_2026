@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Courses{% endblock %}
+{% block content %}
+<div class="wrapper">
+  <h1 class="page-title">Course Catalog</h1>
+  <p class="page-subtitle">
+    {% if courses %}{{ courses|length }} course{{ 's' if courses|length != 1 else '' }} available{% else %}No courses yet{% endif %}
+    {% if current_user.is_authenticated %} · Welcome, <strong>{{ current_user.name }}</strong>{% if current_user.is_admin %} <span class="badge badge-orange">Admin</span>{% endif %}{% endif %}
+  </p>
+
+  {% if courses %}
+    {% for course in courses %}
+      {% set nivel_badge = 'badge-green' if course.level == 'Principiante' else ('badge-blue' if course.level == 'Intermedio' else 'badge-orange') %}
+      <div class="card">
+        <div class="card-title">{{ course.title }}</div>
+        <div class="card-meta">
+          <span>👨‍🏫 {{ course.instructor }}</span>
+          <span>⏱ {{ course.duration }}</span>
+          <span class="badge {{ nivel_badge }}">{{ course.level }}</span>
+        </div>
+        <p class="card-desc">{{ course.description[:160] }}{% if course.description|length > 160 %}…{% endif %}</p>
+        <a href="{{ url_for('view_course', id=course.id) }}" class="btn btn-primary btn-sm">View course</a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+          <a href="{{ url_for('editar_curso', id=course.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      <div class="empty-icon">📚</div>
+      <p>No courses published yet.</p>
+      {% if current_user.is_authenticated and current_user.is_admin %}
+        <br><a href="{{ url_for('new_course') }}" class="btn btn-primary">Create the first course</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

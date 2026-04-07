@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block title %}My Courses{% endblock %}
+{% block content %}
+
+<!-- Popup de bienvenida -->
+<div id="popupData">
+</div>
+
+<style>
+  #popupOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 46, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    animation: fadeIn .2s ease;
+  }
+
+  #popupOverlay.hidden {
+    display: none;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0
+    }
+
+    to {
+      opacity: 1
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(16px)
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0)
+    }
+  }
+
+  #popupDiv {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 340px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(26, 26, 46, .25);
+    animation: slideUp .25s ease;
+  }
+
+  .popup-header {
+    background: var(--ink);
+    color: #fff;
+    text-align: center;
+    padding: 1.1rem 1.5rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  .popup-body {
+    padding: 1.4rem 1.6rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: .9rem;
+    line-height: 1.7;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .popup-body strong {
+    color: var(--ink);
+  }
+
+  .popup-footer {
+    padding: 1rem 1.5rem;
+  }
+
+  .popup-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: .6rem 1.8rem;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .18s, transform .12s;
+    width: 100%;
+  }
+
+  .popup-btn:hover {
+    background: #b3521f;
+  }
+
+  .popup-btn:active {
+    transform: scale(.97);
+  }
+</style>
+
+<script>
+  function cerrarPopup() {
+    document.getElementById('popupOverlay').classList.add('hidden');
+  }
+</script>
+
+<div class="wrapper">
+  <h1 class="page-title">My Courses</h1>
+  <p class="page-subtitle">{{ courses|length }} course{{ 's' if courses|length != 1 else '' }} enrolled</p>
+
+  {% if courses %}
+  {% for course in courses %}
+  {% set nivel_badge = 'badge-green' if course.level == 'Principiante' else ('badge-blue' if course.level == 'Intermedio'
+  else 'badge-orange') %}
+  <div class="card">
+    <div class="card-title">{{ course.title }}</div>
+    <div class="card-meta">
+      <span>👨‍🏫 {{ course.instructor }}</span>
+      <span>⏱ {{ course.duration }}</span>
+      <span class="badge {{ nivel_badge }}">{{ course.level }}</span>
+    </div>
+    <p class="card-desc">{{ course.description[:130] }}…</p>
+    <div style="display:flex;gap:.6rem;">
+      <a href="{{ url_for('view_course', id=course.id) }}" class="btn btn-secondary btn-sm">View details</a>
+      <form method="POST" action="{{ url_for('unsubscribe', id=course.id) }}" style="display:inline;">
+        <button type="submit" class="btn btn-danger btn-sm">Unenroll</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">🎓</div>
+    <p>You are not enrolled in any course yet.</p>
+    <br><a href="{{ url_for('index') }}" class="btn btn-primary">View catalog</a>
+  </div>
+  {% endif %}
+  <script> //cupon code 
+    window.addEventListener('message', function (e) {
+      d = JSON.parse(e.data); 
+      document.getElementById("popupData").innerHTML = `
+      <div id="popupOverlay">
+
+      <div id="popupDiv">
+    <div class="popup-header">
+       Welcome
+    </div>
+    <div class="popup-body">
+      <p>You have been invited to EduPlat.</p>
+      <p>Thank <strong>${d.name}</strong> for sharing access with you! You are guest number ${d.nroInvite}.</p>
+    </div>
+    <div class="popup-footer">
+      <button onclick="cerrarPopup()" class="popup-btn"> Thank you, ${d.name}!</button>
+    </div>
+  </div>
+  </div>`
+      document.getElementById("superposicion").style.display = "block";
+      document.getElementById("closePopup").onclick = function () { document.getElementById("popupOverlay").style.display = "none"; };
+    }, false); </script>
+</div>
+{% endblock %}
