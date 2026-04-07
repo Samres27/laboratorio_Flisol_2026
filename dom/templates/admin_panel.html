@@ -28,7 +28,7 @@
               <span class="badge {{ nb }}">{{ course.level }}</span>
             </td>
             <td>{{ course.duration }}</td>
-            <td>{{ course.estudiantes|length }}</td>
+            <td>{{ course.students|length }}</td>
             <td>
               <a href="{{ url_for('editar_curso', id=course.id) }}" class="btn btn-secondary btn-sm">Edit</a>
               <form method="POST" action="{{ url_for('delete_course', id=course.id) }}" style="display:inline;" onsubmit="return confirm('Delete «{{ course.title }}»?')">

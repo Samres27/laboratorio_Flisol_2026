@@ -30,7 +30,7 @@ class User(UserMixin, db.Model):
     password   = db.Column(db.String(200), nullable=False)
     is_admin   = db.Column(db.Boolean, default=False)
     created_in  = db.Column(db.DateTime, default=datetime.utcnow)
-    courses     = db.relationship('Course', secondary=registrations, backref='estudiantes')
+    courses     = db.relationship('Course', secondary=registrations, backref='students')
 
 class Course(db.Model):
     id          = db.Column(db.Integer, primary_key=True)
@@ -366,3 +366,10 @@ def create_initial_data():
 if __name__ == '__main__':
     create_initial_data()
     app.run(debug=True, port=5000)
+
+with app.app_context():
+    db.create_all()
+    
+    # Verificar si la tabla users está vacía
+    if User.query.count() == 0:
+        create_initial_data()

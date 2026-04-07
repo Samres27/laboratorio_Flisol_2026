@@ -4,8 +4,8 @@ require('./internal'); // arrancar servidor interno en :8081
 
 const express = require('express');
 const path = require('path');
-
-const { userSessions, initSessions, verifyCsrfChallenge } = require('./csrf');
+const {initSessions:initUserDOM} = require('./dom')
+const { userSessions, initSessions : initUserCSRF, verifyCsrfChallenge } = require('./csrf');
 const { setupVictim } = require('./clickjacking_setup');
 const { banUrl } = require('./banned_urls');
 
@@ -91,9 +91,14 @@ app.listen(port, async () => {
   console.log(`[server] Corriendo en http://localhost:${port}`);
 
   try {
-    await initSessions(db);
+    await initUserCSRF(db);
   } catch (e) {
     console.warn(`[server] CSRF init omitido (servicio no disponible): ${e.message}`);
+  }
+  try{
+    await initUserDOM(db);
+  }catch (e){
+    console.warn(`[server] DOM init omitido (servicio no disponible): ${e.message}`);
   }
 
   try {
