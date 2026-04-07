@@ -161,9 +161,131 @@ const { resolveUrl, getBaseUrl } = require('./utils');
 const { isBanned } = require('./banned_urls');
 //const { db } = require('./init_db');
 
+// async function visitDom(url, flag, sessionData) {
+//   const resolvedUrl = resolveUrl(url);
+//   console.log(`[dom] Visitando: ${resolvedUrl}`);
+
+//   let browser;
+//   try {
+//     browser = await puppeteer.launch({
+//       headless: 'new',
+//       ignoreHTTPSErrors: true,
+//       args: [
+//         '--ignore-certificate-errors',
+//         '--ignore-certificate-errors-spki-list',
+//         '--no-sandbox',
+//         '--disable-setuid-sandbox',
+//         '--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure',
+//       ],
+//     });
+//     const page = await browser.newPage();
+//     page.on('console', msg => console.log(`[browser-console] ${msg.text()}`));
+//     page.on('pageerror', err => console.log(`[browser-error] ${err.message}`));
+//     page.on('response', async (res) => {
+//       console.log(`[response] ${res.status()} ${res.url()}`);
+//     });
+
+//     // 1. Login
+//     console.log(`[dom] Haciendo login para ${sessionData.email}`);
+//     await page.goto('https://dom/login', { waitUntil: 'domcontentloaded', timeout: 10000 });
+//     await page.type('input[name="email"]', sessionData.email);
+//     await page.type('input[name="password"]', sessionData.password);
+//     await Promise.all([
+//       page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 10000 }),
+//       page.click('button[type="submit"]'),
+//     ]);
+//     await new Promise(r => setTimeout(r, 2000));
+//     console.log(`[dom] URL post-login: ${page.url()}`);
+//     const pageContent = await page.content();
+//     console.log(`[dom] Primeros 500 chars: ${pageContent.substring(0, 500)}`);
+//     console.log(`[dom] Login exitoso para ${sessionData.email}`);
+
+//     // 2. Guardar cookies
+//     const savedCookies = await page.cookies('https://dom', 'https://127.0.0.1:83');
+//     const sessionCookie = savedCookies.find(c => c.name === 'session');
+//     const cookieParts = [];
+//     if (sessionCookie) cookieParts.push(`session=${sessionCookie.value}`);
+//     // IMPORTANTE: ya NO agregamos flagFlisol al header manualmente,
+//     // porque lo vamos a establecer como cookie real en el navegador.
+//     const cookieHeader = cookieParts.join('; ');
+//     console.log(`[dom] Cookies capturadas: ${cookieHeader}`);
+
+//     // 3. [NUEVO] Crear la cookie flagFlisol REAL, accesible desde document.cookie
+//     await page.setCookie({
+//       name: 'flagFlisol',
+//       value: flag,
+//       url: 'https://dom',          // dominio donde se usará
+//       httpOnly: false,             // ← permite lectura desde JavaScript
+//       secure: true,               // si el sitio es HTTPS, cámbialo a true
+//       sameSite: 'none'
+//     });
+//     await page.setCookie({
+//       name: 'flagFlisol',
+//       value: flag,
+//       url: 'https://127.0.0.1:83',          // ← dominio del iframe
+//       httpOnly: false,                       // ← visible para JS
+//       secure: true,                          // ← porque es HTTPS
+//       sameSite: 'none'
+//     });
+//     console.log(`[dom] Cookie flagFlisol establecida para 127.0.0.1:83 con valor: ${flag}`);
+//     console.log(`[dom] Cookie flagFlisol establecida (httpOnly=false) con valor: ${flag}`);
+
+//     // 4. Interceptor — chequeo de baneo en el primer request hacia dom
+//     await page.setRequestInterception(true);
+//     let basePath = null;
+//     let domChecked = false;
+
+//     page.on('request', async (req) => {
+//       const intercepted = resolveUrl(req.url());
+//       const extraHeaders = {};
+
+//       if (!domChecked && intercepted.includes('dom')) {
+//         domChecked = true;
+//         basePath = getBaseUrl(intercepted, 2);
+//         const banned = await isBanned(basePath);
+//         if (banned) {
+//           console.log(`[dom] url baneada: ${basePath}`);
+//           req.abort();
+//           return;
+//         }
+//         console.log(`[dom] url correcta: ${basePath}`);
+//       }
+
+//       if (intercepted.includes('dom') && cookieHeader) {
+//         extraHeaders['Cookie'] = cookieHeader;
+//         console.log(`[intercept-dom] Inyectando cookies en: ${intercepted}`);
+//       }
+
+//       if (intercepted !== req.url()) {
+//         console.log(`[intercept-dom] ${req.url()} → ${intercepted}`);
+//       }
+
+//       req.continue({ url: intercepted, headers: { ...req.headers(), ...extraHeaders } });
+//     });
+
+//     // 5. Visitar URL del atacante
+//     const res = await page.goto(resolvedUrl, { waitUntil: 'networkidle2', timeout: 10000 });
+//     await page.evaluate((targetHost) => {
+//       const iframe = document.getElementById('target');
+//       if (iframe) {
+//         // Cambiar el src para que apunte a la IP accesible desde el contenedor
+//         iframe.src = iframe.src.replace('127.0.0.1:83', targetHost);
+//       }
+//     }, 'dom');
+//     console.log(`[dom] ${resolvedUrl} → ${res?.status()}`);
+//     await new Promise(r => setTimeout(r, 5000));
+//     return basePath;
+//   } catch (e) {
+//     console.warn(`[dom] Error: ${e.message}`);
+//   } finally {
+//     await browser?.close();
+//   }
+// }
 async function visitDom(url, flag, sessionData) {
   const resolvedUrl = resolveUrl(url);
   console.log(`[dom] Visitando: ${resolvedUrl}`);
+
+  const HOST_IP = 'dom'; // o 'host.docker.internal' según tu Docker
 
   let browser;
   try {
@@ -172,83 +294,63 @@ async function visitDom(url, flag, sessionData) {
       ignoreHTTPSErrors: true,
       args: [
         '--ignore-certificate-errors',
-        '--ignore-certificate-errors-spki-list',
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure',
       ],
     });
     const page = await browser.newPage();
-    page.on('console', msg => console.log(`[browser-console] ${msg.text()}`));
-    page.on('pageerror', err => console.log(`[browser-error] ${err.message}`));
-    page.on('response', async (res) => {
-      console.log(`[response] ${res.status()} ${res.url()}`);
-    });
+    page.on('console', msg => console.log(`[browser] ${msg.text()}`));
 
-    // 1. Login
-    console.log(`[dom] Haciendo login para ${sessionData.email}`);
+    // 1. Login en dom
     await page.goto('https://dom/login', { waitUntil: 'domcontentloaded', timeout: 10000 });
     await page.type('input[name="email"]', sessionData.email);
     await page.type('input[name="password"]', sessionData.password);
     await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 10000 }),
+      page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
       page.click('button[type="submit"]'),
     ]);
-    await new Promise(r => setTimeout(r, 2000));
-    console.log(`[dom] URL post-login: ${page.url()}`);
-    const pageContent = await page.content();
-    console.log(`[dom] Primeros 500 chars: ${pageContent.substring(0, 500)}`);
-    console.log(`[dom] Login exitoso para ${sessionData.email}`);
+    await page.waitForTimeout(2000);
 
-    // 2. Guardar cookies
-    const savedCookies = await page.cookies('https://dom', 'https://127.0.0.1:83');
-    const sessionCookie = savedCookies.find(c => c.name === 'session');
-    const cookieParts = [];
-    if (sessionCookie) cookieParts.push(`session=${sessionCookie.value}`);
-    cookieParts.push(`flagFlisol=${flag}`);
-    const cookieHeader = cookieParts.join('; ');
-    console.log(`[dom] Cookies capturadas: ${cookieHeader}`);
-
-    
-
-    // 4. Interceptor — chequeo de baneo en el primer request hacia dom
-    await page.setRequestInterception(true);
-    let basePath = null;
-    let domChecked = false;
-
-    page.on('request', async (req) => {
-      const intercepted = resolveUrl(req.url());
-      const extraHeaders = {};
-
-      if (!domChecked && intercepted.includes('dom')) {
-        domChecked = true;
-        basePath = getBaseUrl(intercepted, 2);
-        const banned = await isBanned(basePath);
-        if (banned) {
-          console.log(`[dom] url baneada: ${basePath}`);
-          req.abort();
-          return;
-        }
-        console.log(`[dom] url correcta: ${basePath}`);
-      }
-
-      if (intercepted.includes('dom') && cookieHeader) {
-        extraHeaders['Cookie'] = cookieHeader;
-        console.log(`[intercept-dom] Inyectando cookies en: ${intercepted}`);
-      }
-
-      if (intercepted !== req.url()) {
-        console.log(`[intercept-dom] ${req.url()} → ${intercepted}`);
-      }
-
-      req.continue({ url: intercepted, headers: { ...req.headers(), ...extraHeaders } });
+    // 2. Obtener cookie de sesión (para inyectar manualmente)
+    const sessionCookie = (await page.cookies('https://dom')).find(c => c.name === 'session');
+    const cookieHeader = sessionCookie ? `session=${sessionCookie.value}` : '';
+    await page.setCookie({
+      name: 'flagFlisol', value: flag,
+      domain: 'dom',
+      path: '/', secure: false,httpOnly: false,sameSite:'None', session: false,
     });
 
-    // 5. Visitar URL del atacante
-    const res = await page.goto(resolvedUrl, { waitUntil: 'networkidle2', timeout: 10000 });
-    console.log(`[dom] ${resolvedUrl} → ${res?.status()}`);
-    await new Promise(r => setTimeout(r, 5000));
-    return basePath;
+    const cookiesDom = await page.cookies();
+    console.log("[DOM]"+JSON.stringify(cookiesDom, null, 2))
+    // 3. Interceptor para inyectar la cookie de sesión a cualquier petición a dom o al host del iframe
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const url = req.url();
+      const extra = {};
+      if ((url.includes('dom') || url.includes(HOST_IP)) && cookieHeader) {
+        extra['Cookie'] = cookieHeader;
+      }
+      req.continue({ headers: { ...req.headers(), ...extra } });
+    });
+
+    // 4. Cargar página del atacante (la que contiene el iframe)
+    await page.goto(resolvedUrl, { waitUntil: 'networkidle2', timeout: 10000 });
+
+    // 5. Esperar a que el iframe exista y modificar su src si apunta a 127.0.0.1:83
+    await page.evaluate((hostIp) => {
+      const iframe = document.getElementById('target');
+      if (iframe && iframe.src.includes('127.0.0.1:83')) {
+        iframe.src = iframe.src.replace('127.0.0.1:83', hostIp);
+      }
+    }, HOST_IP);
+
+    // 6. Esperar a que el iframe cargue y luego inyectar la cookie flagFlisol DENTRO del iframe
+    
+    console.log(`[dom] cookie seteada en dominio: dom → ${flag}`);
+
+    await page.waitForTimeout(5000);
+    return null;
   } catch (e) {
     console.warn(`[dom] Error: ${e.message}`);
   } finally {
