@@ -13,12 +13,12 @@ RUN apk add --no-cache \
         python3-dev \
         libffi-dev 
 
-COPY ./csrf/requirements.txt .
+COPY ./requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./csrf .
+COPY . .
 
-COPY ./csrf/docker-entrypoint.sh /docker-entrypoint.sh
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 RUN sed -i 's/\r//' /docker-entrypoint.sh
 EXPOSE 8000
